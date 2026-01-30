@@ -1,0 +1,7 @@
+{
+  "name": "EduPulse AI",
+  "description": "An innovative AI-driven educational platform that generates personalized quizzes and provides deep performance analysis using Gemini.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
