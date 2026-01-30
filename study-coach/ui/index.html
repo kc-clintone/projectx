@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Study Coach</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; }
+    label { display:block; margin-top:1rem }
+    textarea { width:100%; height:80px }
+    .tasks { margin-top:1rem }
+    .task { border:1px solid #ddd; padding:8px; margin-top:6px }
+  </style>
+</head>
+<body>
+  <h1>Study Coach - Demo UI</h1>
+  <form id="sessionForm">
+    <label>Student ID <input name="student_id" required /></label>
+    <label>Level <input name="student_level" value="grade10" /></label>
+    <label>Subject <input name="subject" value="math" /></label>
+    <label>Tasks (one per line)
+      <textarea name="tasks"></textarea>
+    </label>
+    <button type="submit">Create Session</button>
+  </form>
+
+  <div id="sessionArea" style="display:none">
+    <h2>Session</h2>
+    <div id="sessionData"></div>
+    <div class="tasks" id="taskList"></div>
+    <button id="startTimers">Start Timers</button>
+    <button id="submitResults">Submit Results</button>
+  </div>
+
+  <pre id="result"></pre>
+
+  <script>
+    let currentSession = null
+
+    document.getElementById('sessionForm').addEventListener('submit', async (e)=>{
+      e.preventDefault()
+      const form = e.target
+      const body = { student_id: form.student_id.value, student_level: form.student_level.value, subject: form.subject.value, tasks: form.tasks.value.split('\n').filter(Boolean).map((t,i)=>({id: String(i+1), prompt: t})) }
+      const res = await fetch('/api/v1/session', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) })
+      const data = await res.json()
+      currentSession = data
+      document.getElementById('sessionArea').style.display='block'
+      document.getElementById('sessionData').textContent = JSON.stringify(data, null, 2)
+      const tlist = document.getElementById('taskList')
+      tlist.innerHTML = ''
+      data.tasks.forEach((t, idx)=>{
+        const el = document.createElement('div'); el.className='task'; el.innerHTML = `<strong>Task ${idx+1}</strong> <div>Prompt: ${t.prompt}</div><div>Estimated: ${t.estimated_secs}s</div><div>Actual: <span class="actual">0</span>s</div><button class="done">Complete Early</button>`
+        tlist.appendChild(el)
+      })
+    })
+
+    document.getElementById('startTimers').addEventListener('click', ()=>{
+      if(!currentSession) return
+      document.querySelectorAll('.task').forEach((el, idx)=>{
+        const est = currentSession.tasks[idx].estimated_secs
+        let sec = 0
+        const actualEl = el.querySelector('.actual')
+        const btn = el.querySelector('.done')
+        const iv = setInterval(()=>{ sec++; actualEl.textContent = sec }, 1000)
+        btn.addEventListener('click', ()=>{ clearInterval(iv); actualEl.textContent = sec; el.dataset.actual = sec })
+        el.dataset.timerId = idx
+      })
+    })
+
+    document.getElementById('submitResults').addEventListener('click', async ()=>{
+      if(!currentSession) return
+      const results = Array.from(document.querySelectorAll('.task')).map((el, idx)=>({ actual_seconds: Number(el.dataset.actual)||0, correct: Math.random()>0.5 }))
+      const body = { session_id: currentSession.id, results }
+      const res = await fetch('/api/v1/submit_results', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) })
+      const data = await res.json()
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2)
+    })
+  </script>
+</body>
+</html>
