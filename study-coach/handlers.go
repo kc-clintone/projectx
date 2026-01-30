@@ -80,3 +80,15 @@ func getStudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(plan)
 }
+
+func getStudentTopicsHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["student_id"]
+	m, err := LoadStudentTopics(id)
+	if err != nil {
+		http.Error(w, "failed to load topics", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(m)
+}
