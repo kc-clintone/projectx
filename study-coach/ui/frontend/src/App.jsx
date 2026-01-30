@@ -1,6 +1,43 @@
 import React, {useState, useEffect, useRef} from 'react'
 import clsx from 'clsx'
 
+/**
+ * Badge renders an inline SVG badge and applies a subtle animation when new.
+ * @param {{name:string, icon?:string}} props
+ */
+function Badge({name, icon}){
+  return <div className="badge" title={name} aria-hidden>
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id={`g-${name}`} x1="0" x2="1">
+          <stop offset="0%" stopColor="#ffd54a"/>
+          <stop offset="100%" stopColor="#ffb74d"/>
+        </linearGradient>
+      </defs>
+      <circle cx="32" cy="32" r="30" fill="#fff3e0"/>
+      <path d="M32 10 L39 28 L58 28 L42 38 L48 56 L32 46 L16 56 L22 38 L6 28 L25 28 Z" fill={`url(#g-${name})`} stroke="#ff9800" strokeWidth="1" className="badge-path" />
+    </svg>
+  </div>
+}
+
+/** Confetti component uses a canvas to render a short burst of confetti particles. */
+function Confetti({trigger}){
+  const canvasRef = useRef(null)
+  useEffect(()=>{
+    if(!trigger) return;
+    const canvas = canvasRef.current; if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let running = true;
+    function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight }
+    resize(); window.addEventListener('resize', resize);
+    const particles = [];
+    function emit(){ for(let i=0;i<80;i++){ particles.push({x:Math.random()*canvas.width,y:-10, vx:(Math.random()-0.5)*8, vy:Math.random()*6+2, life:Math.random()*80+60, color:['#f59e0b','#ef4444','#10b981','#3b82f6'][Math.floor(Math.random()*4)], size:Math.random()*8+4}) } }
+    function tick(){ ctx.clearRect(0,0,canvas.width,canvas.height); for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.25; p.life--; ctx.fillStyle=p.color; ctx.fillRect(p.x,p.y,p.size,p.size); if(p.life<=0||p.y>canvas.height+20) particles.splice(i,1) } if(running) requestAnimationFrame(tick) }
+    emit(); tick(); setTimeout(()=>{ running=false; window.removeEventListener('resize', resize) }, 3500);
+  },[trigger])
+  return <canvas ref={canvasRef} className="confetti-canvas" aria-hidden="true" />
+}
+
 // App is the main frontend component
 export default function App(){
   const [studentID, setStudentID] = useState('demo_anna')
@@ -12,6 +49,8 @@ export default function App(){
   const timerRef = useRef(null)
   const [profile, setProfile] = useState(null)
   const [mockScenarios, setMockScenarios] = useState([])
+  const [confettiTrigger, setConfettiTrigger] = useState(false)
+  const prevBadgesRef = useRef(0)
 
   useEffect(()=>{
     fetch('/ui/mock_tests.json').then(r=>r.json()).then(setMockScenarios)
@@ -24,8 +63,20 @@ export default function App(){
     return ()=>clearInterval(timerRef.current)
   },[running])
 
+  // detect new badges and trigger confetti
+  useEffect(()=>{
+    const count = profile?.earned_badges?.length || 0
+    if(prevBadgesRef.current && count > prevBadgesRef.current){
+      setConfettiTrigger(c=>!c)
+    }
+    prevBadgesRef.current = count
+  },[profile?.earned_badges])
+
+  /** createSession posts the tasks to the backend and stores the generated session */
   function createSession(){ const tasks = tasksText.split('\n').filter(Boolean).map((t,i)=>({id:String(i+1),prompt:t})); fetch('/api/v1/session',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({student_id:studentID,student_level:'grade10',subject:'math',tasks})}).then(r=>r.json()).then(setSession) }
+  /** startSequence begins sequential timed practice */
   function startSequence(){ if(!session) return; setCurrentIdx(0); setElapsed(0); setRunning(true) }
+  /** doneTask marks current task done and steps to the next */
   function doneTask(){ if(session && session.tasks[currentIdx]) session.tasks[currentIdx].actual_seconds = elapsed; setElapsed(0); if(currentIdx+1 >= session.tasks.length){ setRunning(false); promptSubmit() } else { setCurrentIdx(currentIdx+1); setElapsed(0) } }
   async function promptSubmit(){ if(confirm('Submit your answers now?')){ const results = session.tasks.map(t=>({actual_seconds:t.actual_seconds||t.estimated_secs, correct: Math.random()>0.4})); await fetch('/api/v1/submit_results',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({session_id:session.id, results})}); alert('Study plan generated'); fetch(`/api/v1/student/${studentID}/profile`).then(r=>r.json()).then(setProfile) }}
 
@@ -65,13 +116,20 @@ export default function App(){
     <div style={{marginTop:12}}>
       { profile && <div className="card">
         <h3>Profile</h3>
-        <div>ID: {profile.student_id}</div>
-        <div>Points: {profile.points}</div>
-        <div>Streak: {profile.streak}</div>
-        <div>Badges: {profile.earned_badges?.map(b=>b.name).join(', ')}</div>
-        <div>Recap: {profile.weekly_recap?.map(r=>r.topic+':'+r.improved_by).join(', ')}</div>
-        <div>Summary: {profile.summary}</div>
+        <div style={{display:'flex',alignItems:'center'}}>
+          <div style={{flex:1}}>
+            <div>ID: {profile.student_id}</div>
+            <div>Points: {profile.points}</div>
+            <div>Streak: {profile.streak}</div>
+            <div>Recap: {profile.weekly_recap?.map(r=>r.topic+':'+r.improved_by).join(', ')}</div>
+            <div style={{marginTop:8}}>Summary: {profile.summary}</div>
+          </div>
+          <div style={{marginLeft:12}}>
+            {profile.earned_badges?.map(b=> <div key={b.id} style={{display:'flex',alignItems:'center'}}><Badge name={b.name} /> <div style={{marginLeft:8}}>{b.name}</div></div>)}
+          </div>
+        </div>
       </div> }
     </div>
+    <Confetti trigger={confettiTrigger} />
   </div>
 }
