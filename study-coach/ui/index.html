@@ -112,7 +112,18 @@
       (profile.earned_badges||[]).forEach(b=>{
         const bd = document.createElement('div')
         bd.className = 'badge'
-        bd.innerHTML = `<span class="icon">${b.icon}</span><div><strong>${b.name}</strong><div style="font-size:12px">${b.description}</div></div>`
+        // attempt to use svg asset if available
+        const img = document.createElement('img')
+        img.width = 36
+        img.height = 36
+        img.style.borderRadius = '6px'
+        img.style.objectFit = 'cover'
+        img.onerror = function(){ this.style.display='none' }
+        img.src = `/ui/assets/badges/${b.id}.svg`
+        bd.appendChild(img)
+        const info = document.createElement('div')
+        info.innerHTML = `<strong>${b.name}</strong><div style="font-size:12px">${b.description}</div><div style="font-size:12px;color:#666">+${b.points} pts</div>`
+        bd.appendChild(info)
         bd.style.borderColor = b.color
         bd.style.background = '#fff'
         ach.appendChild(bd)

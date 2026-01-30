@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <rect rx="10" width="64" height="64" fill="#3a8" />
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28">🎯</text>
+</svg>
