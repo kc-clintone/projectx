@@ -10,10 +10,16 @@ func TestAddAchievementAwardsBadgeAndPoints(t *testing.T) {
 	_ = ensureDir()
 	p := &ProfileResponse{StudentID: "u1", Achievements: []string{}, EarnedBadges: []Badge{}, Points: 0}
 	AddAchievement(p, "First Steps")
-	if len(p.Achievements) != 1 { t.Fatalf("expected achievement, got %v", p.Achievements) }
-	if p.Points <= 0 { t.Fatalf("expected points awarded, got %d", p.Points) }
+	if len(p.Achievements) != 1 {
+		t.Fatalf("expected achievement, got %v", p.Achievements)
+	}
+	if p.Points <= 0 {
+		t.Fatalf("expected points awarded, got %d", p.Points)
+	}
 	AddAchievement(p, "First Steps") // duplicate shouldn't add
-	if len(p.Achievements) != 1 { t.Fatalf("duplicate achievement added") }
+	if len(p.Achievements) != 1 {
+		t.Fatalf("duplicate achievement added")
+	}
 }
 
 func TestPointsPersistedWithProfile(t *testing.T) {
@@ -21,8 +27,14 @@ func TestPointsPersistedWithProfile(t *testing.T) {
 	_ = ensureDir()
 	p := &ProfileResponse{StudentID: "u2", Achievements: []string{}, EarnedBadges: []Badge{}, Points: 0}
 	AddAchievement(p, "Accuracy Ace")
-	if err := SaveProfile(p.StudentID, p); err != nil { t.Fatal(err) }
+	if err := SaveProfile(p.StudentID, p); err != nil {
+		t.Fatal(err)
+	}
 	loaded, err := LoadProfile(p.StudentID)
-	if err != nil { t.Fatal(err) }
-	if loaded.Points != p.Points { t.Fatalf("points mismatch %d vs %d", loaded.Points, p.Points) }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Points != p.Points {
+		t.Fatalf("points mismatch %d vs %d", loaded.Points, p.Points)
+	}
 }

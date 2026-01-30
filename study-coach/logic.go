@@ -207,14 +207,14 @@ func GenerateStudyPlan(s *Session) *StudyPlan {
 
 // badgeCatalog defines metadata for available badges
 var badgeCatalog = map[string]Badge{
-	"First Steps":     {ID: "first_steps",     Name: "First Steps",     Icon: "🏁", Color: "#6ad", Description: "Completed your first session", Points: 10},
-	"Accuracy Ace":   {ID: "accuracy_ace",   Name: "Accuracy Ace",   Icon: "🎯", Color: "#3a8", Description: "80%+ accuracy in a session", Points: 20},
-	"Quick Solver":    {ID: "quick_solver",    Name: "Quick Solver",    Icon: "⚡", Color: "#f6a", Description: "Solved most tasks faster than estimate", Points: 15},
-	"3-Day Streak":    {ID: "streak_3",    Name: "3-Day Streak",    Icon: "🔥", Color: "#f90", Description: "Active 3 days in a row", Points: 10},
-	"7-Day Streak":    {ID: "streak_7",    Name: "7-Day Streak",    Icon: "🏆", Color: "#fc0", Description: "Active 7 days in a row", Points: 50},
-	"Speed Demon":     {ID: "speed_demon",     Name: "Speed Demon",     Icon: "🚀", Color: "#a6f", Description: "All tasks completed faster than estimate", Points: 25},
+	"First Steps":      {ID: "first_steps", Name: "First Steps", Icon: "🏁", Color: "#6ad", Description: "Completed your first session", Points: 10},
+	"Accuracy Ace":     {ID: "accuracy_ace", Name: "Accuracy Ace", Icon: "🎯", Color: "#3a8", Description: "80%+ accuracy in a session", Points: 20},
+	"Quick Solver":     {ID: "quick_solver", Name: "Quick Solver", Icon: "⚡", Color: "#f6a", Description: "Solved most tasks faster than estimate", Points: 15},
+	"3-Day Streak":     {ID: "streak_3", Name: "3-Day Streak", Icon: "🔥", Color: "#f90", Description: "Active 3 days in a row", Points: 10},
+	"7-Day Streak":     {ID: "streak_7", Name: "7-Day Streak", Icon: "🏆", Color: "#fc0", Description: "Active 7 days in a row", Points: 50},
+	"Speed Demon":      {ID: "speed_demon", Name: "Speed Demon", Icon: "🚀", Color: "#a6f", Description: "All tasks completed faster than estimate", Points: 25},
 	"Topic Apprentice": {ID: "topic_apprentice", Name: "Topic Apprentice", Icon: "📘", Color: "#48a", Description: "Practice a topic multiple times", Points: 15},
-	"Topic Master":    {ID: "topic_master",    Name: "Topic Master",    Icon: "📜", Color: "#6c3", Description: "Mastered a topic (many improvements)", Points: 60},
+	"Topic Master":     {ID: "topic_master", Name: "Topic Master", Icon: "📜", Color: "#6c3", Description: "Mastered a topic (many improvements)", Points: 60},
 }
 
 // GetBadgeByName returns a copy of a Badge metadata by achievement name
