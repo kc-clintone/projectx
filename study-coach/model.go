@@ -77,6 +77,8 @@ type ProfileResponse struct {
 	// new fields for gamification
 	Streak     int       `json:"streak"`
 	LastActive time.Time `json:"last_active,omitempty"`
+	// Summary is an optional concise AI-generated summary of strengths/weaknesses
+	Summary string `json:"summary,omitempty"`
 }
 
 type TopicImprovement struct {

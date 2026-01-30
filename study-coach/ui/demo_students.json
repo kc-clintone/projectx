@@ -1,0 +1,18 @@
+[
+  {
+    "student_id": "demo_anna",
+    "topics": { "integral": 2, "algebra": 1 },
+    "earned_badges": [ { "id":"first_steps","name":"First Steps","icon":"🏁","color":"#6ad","description":"Completed your first session","points":10 } ],
+    "points": 10,
+    "streak": 2,
+    "weekly_recap": [ { "topic":"integral","improved_by":1 } ]
+  },
+  {
+    "student_id": "demo_ben",
+    "topics": { "integral": 5, "algebra": 3, "geometry":1 },
+    "earned_badges": [ { "id":"accuracy_ace","name":"Accuracy Ace","icon":"🎯","color":"#3a8","description":"80%+ accuracy","points":20 }, { "id":"quick_solver","name":"Quick Solver","icon":"⚡","color":"#f6a","description":"Solved quickly","points":15 } ],
+    "points": 35,
+    "streak": 8,
+    "weekly_recap": [ { "topic":"algebra","improved_by":2 }, { "topic":"integral","improved_by":1 } ]
+  }
+]

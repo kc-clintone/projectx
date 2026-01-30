@@ -1,0 +1,5 @@
+# Node deps for E2E
+node_modules/
+playwright-report/
+.env.local
+/data/

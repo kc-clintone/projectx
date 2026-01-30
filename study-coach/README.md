@@ -35,6 +35,16 @@ Run & demo
 2. Run: `go run ./...`.
 3. Open demo UI: `http://localhost:8080/ui/index.html`.
 
+Gemini model & API key
+-----------------------
+For the optional AI assistant features we used a Gemini-compatible model. The API key for demos can be provided in `.env.local` as:
+
+```
+GEMINI_API_KEY=your_api_key_here
+```
+
+Warning: The repository currently stores demo keys in `.env.local` (ignored by git). Never commit real production keys to version control. For the hackathon we keep the demo key local only.
+
 Submission checklist
 --------------------
 - Agent name and description: Study Coach — a timed practice and study-plan agent.

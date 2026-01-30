@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -123,7 +125,7 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 		AddAchievement(profile, "7-Day Streak")
 	}
 
-	// persist profile and snapshot of topics
+	// Persist profile and snapshot of topics
 	if err := SaveProfile(profile.StudentID, profile); err == nil {
 		// build snapshot from current topics
 		if topics, err2 := LoadStudentTopics(profile.StudentID); err2 == nil {
@@ -132,12 +134,22 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// --- attach AI-generated summary to profile (if enabled) ---
+	// Build a concise prompt describing recent session and plan to generate a short summary
+	prompt := buildSummaryPrompt(sess, plan)
+	if summary, err := QueryGemini(prompt); err == nil {
+		profile.Summary = summary
+		// persist updated profile with summary
+		_ = SaveProfile(profile.StudentID, profile)
+	}
+
 	// --- end gamification update ---
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(plan)
 }
 
+// getStudyPlanHandler retrieves the study plan for a student
 func getStudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["student_id"]
@@ -150,6 +162,7 @@ func getStudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(plan)
 }
 
+// getStudentTopicsHandler retrieves the topics for a student
 func getStudentTopicsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["student_id"]
@@ -162,6 +175,7 @@ func getStudentTopicsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(m)
 }
 
+// getProfileHandler retrieves the profile for a student
 func getProfileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["student_id"]
@@ -205,4 +219,19 @@ func AddAchievement(p *ProfileResponse, name string) {
 		p.EarnedBadges = append(p.EarnedBadges, b)
 		p.Points += b.Points
 	}
+}
+
+// buildSummaryPrompt composes a short prompt describing the session and study plan for the LLM
+func buildSummaryPrompt(sess *Session, plan *StudyPlan) string {
+	var b strings.Builder
+	b.WriteString("You are an educational assistant. Provide a concise summary (2-3 sentences) of the student's recent session, strengths, weaknesses, and 2 quick recommendations.\n\n")
+	b.WriteString("Session tasks:\n")
+	for i, t := range sess.Tasks {
+		b.WriteString(fmt.Sprintf("%d. %s (est %ds, actual %ds, correct: %v)\n", i+1, t.Prompt, t.EstimatedSecs, t.ActualSeconds, t.Correct != nil && *t.Correct))
+	}
+	b.WriteString("\nStudy plan focus areas:\n")
+	for k, v := range plan.Focus {
+		b.WriteString(fmt.Sprintf("- %s: %s\n", k, v))
+	}
+	return b.String()
 }

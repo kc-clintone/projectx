@@ -1,0 +1,19 @@
+[
+  {
+    "name": "Quick Math Drill",
+    "tasks": [
+      "5+7",
+      "12*3",
+      "integrate x^2",
+      "solve for x: 2x+3=7"
+    ]
+  },
+  {
+    "name": "Reading Comprehension",
+    "tasks": [
+      "Summarize the paragraph about photosynthesis",
+      "List three causes of WWI",
+      "Explain the theme of the given poem"
+    ]
+  }
+]

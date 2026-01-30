@@ -141,6 +141,11 @@ func UpdateStudentTopicFrequencies(studentID string, topics []string, incorrect 
 	return SaveStudentTopics(studentID, m)
 }
 
+// GenerateStudyPlan analyzes a completed session and returns a StudyPlan. It adjusts
+// next-timers based on actual performance, records topic frequencies, and fills the
+// Focus map with short recommendations. If Gemini is enabled (GEMINI_ENABLED=1) the
+// function will call QueryGemini to produce a concise, human-friendly recommendation
+// per topic; otherwise it uses a simple rule-based recommendation.
 func GenerateStudyPlan(s *Session) *StudyPlan {
 	plan := &StudyPlan{
 		StudentID: s.StudentID,
@@ -201,6 +206,25 @@ func GenerateStudyPlan(s *Session) *StudyPlan {
 			}
 		}
 	}
+
+	// If Gemini is enabled, attempt to enrich each focus entry with an AI-generated
+	// recommendation. This is gated by GEMINI_ENABLED and will behave as a no-op when
+	// disabled, keeping the function deterministic for tests.
+	for topic := range plan.Focus {
+		// build a short prompt for the model
+		prompt := "You are an educational assistant. Given a student who struggled or needs practice in the topic '" + topic + "', provide a single concise (one-sentence) actionable recommendation and one short practice suggestion."
+		if summary, err := QueryGemini(prompt); err == nil {
+			// use the model output as the recommendation (trim to reasonable length)
+			if len(summary) > 0 {
+				if len(summary) > 300 {
+					plan.Focus[topic] = summary[:300]
+				} else {
+					plan.Focus[topic] = summary
+				}
+			}
+		}
+	}
+
 	plan.NextTimers = nextTimers
 	return plan
 }
