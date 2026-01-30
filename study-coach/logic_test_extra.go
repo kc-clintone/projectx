@@ -24,8 +24,14 @@ func TestStudentTopicPersistence(t *testing.T) {
 	_ = os.RemoveAll(storageDir)
 	_ = ensureDir()
 	m := map[string]int{"integral": 2, "practice": 1}
-	if err := SaveStudentTopics("s123", m); err != nil { t.Fatal(err) }
+	if err := SaveStudentTopics("s123", m); err != nil {
+		t.Fatal(err)
+	}
 	loaded, err := LoadStudentTopics("s123")
-	if err != nil { t.Fatal(err) }
-	if !reflect.DeepEqual(m, loaded) { t.Fatalf("mismatch: %v vs %v", m, loaded) }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(m, loaded) {
+		t.Fatalf("mismatch: %v vs %v", m, loaded)
+	}
 }
