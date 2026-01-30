@@ -16,8 +16,16 @@
     .progress-bar { background:#eee; border-radius:6px; height:14px; overflow:hidden }
     .progress-fill { height:100%; background:linear-gradient(90deg,#6ad,#3a8); width:0% }
     .achievements { display:flex; gap:8px; flex-wrap:wrap }
-    .badge { background:#ffd; border:1px solid #cc9; padding:6px 8px; border-radius:6px }
+    .badge { background:#ffd; border:1px solid #cc9; padding:6px 8px; border-radius:6px; display:flex; gap:8px; align-items:center }
+    .badge .icon { font-size:18px }
     .recap { margin-top:8px }
+
+    /* Toast styles */
+    .toast-container { position: fixed; right: 20px; top: 20px; z-index: 1000; display:flex; flex-direction:column; gap:10px }
+    .toast { background: #111; color:#fff; padding:10px 14px; border-radius:8px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); opacity:0; transform: translateY(-10px); animation: slideIn 400ms ease forwards }
+    .toast .badge-mini { display:inline-flex; align-items:center; gap:8px }
+    @keyframes slideIn { to { opacity:1; transform: translateY(0); } }
+    @keyframes slideOut { to { opacity:0; transform: translateY(-10px); } }
   </style>
 </head>
 <body>
@@ -46,6 +54,7 @@
   <div id="profileArea" class="profile" style="display:none">
     <h2>Student Profile</h2>
     <div><strong>ID:</strong> <span id="pf_id"></span></div>
+    <div style="margin-top:6px"><strong>Points:</strong> <span id="pf_points">0</span> &nbsp; <strong>Streak:</strong> <span id="pf_streak">0</span></div>
     <div style="margin-top:8px"><strong>Topics & Progress</strong></div>
     <div id="pf_topics"></div>
     <div style="margin-top:8px"><strong>Achievements</strong></div>
@@ -54,11 +63,13 @@
     <div id="pf_recap" class="recap"></div>
   </div>
 
+  <div class="toast-container" id="toasts"></div>
   <pre id="result"></pre>
 
   <script>
     let currentSession = null
     let intervals = []
+    const shownBadges = new Set()
 
     function makeTaskEl(t, idx){
       const el = document.createElement('div')
@@ -68,15 +79,26 @@
       return el
     }
 
+    function showToast(badge){
+      const container = document.getElementById('toasts')
+      const t = document.createElement('div')
+      t.className = 'toast'
+      t.innerHTML = `<div class="badge-mini" style="background:${badge.color}; color:#000; padding:6px 8px; border-radius:6px"><span class="icon">${badge.icon}</span><strong>${badge.name}</strong></div><div style="margin-top:6px">${badge.description}</div>`
+      container.appendChild(t)
+      // auto remove after 4s with fade
+      setTimeout(()=>{ t.style.animation = 'slideOut 400ms ease forwards'; setTimeout(()=>t.remove(), 420) }, 3600)
+    }
+
     function renderProfile(profile){
       document.getElementById('profileArea').style.display = 'block'
       document.getElementById('pf_id').textContent = profile.student_id
+      document.getElementById('pf_points').textContent = profile.points || 0
+      document.getElementById('pf_streak').textContent = profile.streak || 0
+
       const topicsDiv = document.getElementById('pf_topics')
       topicsDiv.innerHTML = ''
-      // compute total to normalize progress
       let total = 0
       for(const k in profile.topics) total += profile.topics[k]
-      // render each topic with progress (higher count -> more attention needed; invert to progress)
       const entries = Object.entries(profile.topics).sort((a,b)=>b[1]-a[1])
       entries.forEach(([k,v])=>{
         const pct = total===0?0:Math.max(0, 100 - Math.round((v/total)*100))
@@ -87,7 +109,19 @@
 
       const ach = document.getElementById('pf_achievements')
       ach.innerHTML = ''
-      (profile.achievements||[]).forEach(a=>{ const b=document.createElement('div'); b.className='badge'; b.textContent=a; ach.appendChild(b) })
+      (profile.earned_badges||[]).forEach(b=>{
+        const bd = document.createElement('div')
+        bd.className = 'badge'
+        bd.innerHTML = `<span class="icon">${b.icon}</span><div><strong>${b.name}</strong><div style="font-size:12px">${b.description}</div></div>`
+        bd.style.borderColor = b.color
+        bd.style.background = '#fff'
+        ach.appendChild(bd)
+        // toast new badges
+        if(!shownBadges.has(b.id)){
+          shownBadges.add(b.id)
+          showToast(b)
+        }
+      })
 
       const recap = document.getElementById('pf_recap')
       recap.innerHTML = ''
@@ -114,7 +148,6 @@
 
     document.getElementById('startTimers').addEventListener('click', ()=>{
       if(!currentSession) return
-      // clear previous
       intervals.forEach(iv=>clearInterval(iv))
       intervals = []
       document.querySelectorAll('.task').forEach((el, idx)=>{
@@ -127,7 +160,6 @@
         intervals.push(iv)
         doneBtn.onclick = ()=>{ clearInterval(iv); actualEl.textContent = sec; el.dataset.actual = sec }
         resetBtn.onclick = ()=>{ clearInterval(iv); sec = 0; actualEl.textContent = 0; delete el.dataset.actual }
-        // allow toggling correctness manually
         correctCb.onclick = ()=>{ el.dataset.correct = correctCb.checked }
       })
     })
@@ -147,7 +179,6 @@
 
     document.getElementById('submitResults').addEventListener('click', async ()=>{
       if(!currentSession) return
-      // stop all timers
       intervals.forEach(iv=>clearInterval(iv))
       intervals = []
       const results = Array.from(document.querySelectorAll('.task')).map((el, idx)=>({ actual_seconds: Number(el.dataset.actual)||0, correct: el.dataset.correct === 'true' }))
@@ -156,7 +187,6 @@
       if(!res.ok){ alert('submit failed'); return }
       const data = await res.json()
       document.getElementById('result').textContent = JSON.stringify(data, null, 2)
-      // fetch updated profile and display gamified elements
       const p = await fetchProfileFor(currentSession.student_id)
       if(p) renderProfile(p)
     })

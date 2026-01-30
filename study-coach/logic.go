@@ -90,17 +90,26 @@ func ExtractTopics(text string) []string {
 		freq[s]++
 	}
 	// select top 3
-	type kv struct{ k string; v int }
+	type kv struct {
+		k string
+		v int
+	}
 	var arr []kv
-	for k, v := range freq { arr = append(arr, kv{k,v}) }
+	for k, v := range freq {
+		arr = append(arr, kv{k, v})
+	}
 	// simple sort
-	for i:=0;i<len(arr);i++{
-		for j:=i+1;j<len(arr);j++{
-			if arr[j].v>arr[i].v { arr[i],arr[j]=arr[j],arr[i] }
+	for i := 0; i < len(arr); i++ {
+		for j := i + 1; j < len(arr); j++ {
+			if arr[j].v > arr[i].v {
+				arr[i], arr[j] = arr[j], arr[i]
+			}
 		}
 	}
 	out := []string{}
-	for i:=0;i<len(arr) && i<3;i++ { out = append(out, arr[i].k) }
+	for i := 0; i < len(arr) && i < 3; i++ {
+		out = append(out, arr[i].k)
+	}
 	return out
 }
 
@@ -119,9 +128,13 @@ func simpleStem(s string) string {
 
 // UpdateStudentTopicFrequencies increments incorrect-topic counts for a student
 func UpdateStudentTopicFrequencies(studentID string, topics []string, incorrect bool) error {
-	if !incorrect || len(topics)==0 { return nil }
+	if !incorrect || len(topics) == 0 {
+		return nil
+	}
 	m, err := LoadStudentTopics(studentID)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	for _, t := range topics {
 		m[t] = m[t] + 1
 	}
@@ -141,31 +154,48 @@ func GenerateStudyPlan(s *Session) *StudyPlan {
 		if t.Correct != nil && !*t.Correct {
 			// use topic if available, else prompt snippet
 			key := "general"
-			if len(t.Topics) > 0 { key = t.Topics[0] }
+			if len(t.Topics) > 0 {
+				key = t.Topics[0]
+			}
 			plan.Focus[key] = "review topic, practice similar problems"
 			_ = UpdateStudentTopicFrequencies(s.StudentID, t.Topics, true)
 		}
 		// adjust next timer based on speed
 		est := t.EstimatedSecs
 		actual := t.ActualSeconds
-		if actual == 0 { actual = est }
+		if actual == 0 {
+			actual = est
+		}
 		ratio := float64(actual) / float64(est)
 		var adj float64 = 1.0
-		if ratio < 0.8 { adj = 0.9 } else if ratio > 1.2 { adj = 1.15 }
+		if ratio < 0.8 {
+			adj = 0.9
+		} else if ratio > 1.2 {
+			adj = 1.15
+		}
 		next := int(math.Round(float64(est) * adj))
 		nextTimers = append(nextTimers, next)
 	}
 	// integrate student-wide topic frequencies into focus (top 3)
 	if m, err := LoadStudentTopics(s.StudentID); err == nil {
-		type kv struct{ k string; v int }
+		type kv struct {
+			k string
+			v int
+		}
 		var arr []kv
-		for k, v := range m { if v>0 { arr = append(arr, kv{k,v}) } }
-		for i:=0;i<len(arr);i++{
-			for j:=i+1;j<len(arr);j++{
-				if arr[j].v>arr[i].v { arr[i],arr[j]=arr[j],arr[i] }
+		for k, v := range m {
+			if v > 0 {
+				arr = append(arr, kv{k, v})
 			}
 		}
-		for i:=0;i<len(arr) && i<3;i++ {
+		for i := 0; i < len(arr); i++ {
+			for j := i + 1; j < len(arr); j++ {
+				if arr[j].v > arr[i].v {
+					arr[i], arr[j] = arr[j], arr[i]
+				}
+			}
+		}
+		for i := 0; i < len(arr) && i < 3; i++ {
 			if _, ok := plan.Focus[arr[i].k]; !ok {
 				plan.Focus[arr[i].k] = "practice more problems in this topic"
 			}
@@ -173,4 +203,22 @@ func GenerateStudyPlan(s *Session) *StudyPlan {
 	}
 	plan.NextTimers = nextTimers
 	return plan
+}
+
+// badgeCatalog defines metadata for available badges
+var badgeCatalog = map[string]Badge{
+	"First Steps":     {ID: "first_steps",     Name: "First Steps",     Icon: "🏁", Color: "#6ad", Description: "Completed your first session", Points: 10},
+	"Accuracy Ace":   {ID: "accuracy_ace",   Name: "Accuracy Ace",   Icon: "🎯", Color: "#3a8", Description: "80%+ accuracy in a session", Points: 20},
+	"Quick Solver":    {ID: "quick_solver",    Name: "Quick Solver",    Icon: "⚡", Color: "#f6a", Description: "Solved most tasks faster than estimate", Points: 15},
+	"3-Day Streak":    {ID: "streak_3",    Name: "3-Day Streak",    Icon: "🔥", Color: "#f90", Description: "Active 3 days in a row", Points: 10},
+	"7-Day Streak":    {ID: "streak_7",    Name: "7-Day Streak",    Icon: "🏆", Color: "#fc0", Description: "Active 7 days in a row", Points: 50},
+	"Speed Demon":     {ID: "speed_demon",     Name: "Speed Demon",     Icon: "🚀", Color: "#a6f", Description: "All tasks completed faster than estimate", Points: 25},
+	"Topic Apprentice": {ID: "topic_apprentice", Name: "Topic Apprentice", Icon: "📘", Color: "#48a", Description: "Practice a topic multiple times", Points: 15},
+	"Topic Master":    {ID: "topic_master",    Name: "Topic Master",    Icon: "📜", Color: "#6c3", Description: "Mastered a topic (many improvements)", Points: 60},
+}
+
+// GetBadgeByName returns a copy of a Badge metadata by achievement name
+func GetBadgeByName(name string) (Badge, bool) {
+	b, ok := badgeCatalog[name]
+	return b, ok
 }

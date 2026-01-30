@@ -42,11 +42,11 @@ type Submission struct {
 
 // StudyPlan is a simple plan returned after analysis
 type StudyPlan struct {
-	StudentID string            `json:"student_id"`
-	Subject   string            `json:"subject"`
-	CreatedAt time.Time         `json:"created_at"`
-	Focus     map[string]string `json:"focus"`       // topic -> recommendation
-	NextTimers []int            `json:"next_timers"` // per-task suggested seconds
+	StudentID  string            `json:"student_id"`
+	Subject    string            `json:"subject"`
+	CreatedAt  time.Time         `json:"created_at"`
+	Focus      map[string]string `json:"focus"`       // topic -> recommendation
+	NextTimers []int             `json:"next_timers"` // per-task suggested seconds
 }
 
 // TopicSnapshot is a timestamped snapshot of a student's topic frequencies
@@ -55,16 +55,28 @@ type TopicSnapshot struct {
 	Topics    map[string]int `json:"topics"`
 }
 
+// Badge contains metadata for a badge/achievement
+type Badge struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Icon        string `json:"icon"`
+	Color       string `json:"color"`
+	Description string `json:"description"`
+	Points      int    `json:"points"`
+}
+
 // ProfileResponse returned by the student profile endpoint
 type ProfileResponse struct {
 	StudentID    string             `json:"student_id"`
 	Topics       map[string]int     `json:"topics"`
 	Achievements []string           `json:"achievements"`
+	EarnedBadges []Badge            `json:"earned_badges"`
+	Points       int                `json:"points"`
 	Progress     map[string]int     `json:"progress_percent"`
 	WeeklyRecap  []TopicImprovement `json:"weekly_recap"`
 	// new fields for gamification
-	Streak       int                `json:"streak"`
-	LastActive   time.Time          `json:"last_active,omitempty"`
+	Streak     int       `json:"streak"`
+	LastActive time.Time `json:"last_active,omitempty"`
 }
 
 type TopicImprovement struct {

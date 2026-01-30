@@ -192,7 +192,7 @@ func getProfileHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(profile)
 }
 
-// helper to append unique achievement
+// helper to append unique achievement and award badge/points
 func AddAchievement(p *ProfileResponse, name string) {
 	for _, a := range p.Achievements {
 		if a == name {
@@ -200,4 +200,9 @@ func AddAchievement(p *ProfileResponse, name string) {
 		}
 	}
 	p.Achievements = append(p.Achievements, name)
+	if b, ok := GetBadgeByName(name); ok {
+		// add to earned badges and points
+		p.EarnedBadges = append(p.EarnedBadges, b)
+		p.Points += b.Points
+	}
 }
