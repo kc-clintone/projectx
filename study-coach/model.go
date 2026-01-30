@@ -11,6 +11,7 @@ type Task struct {
 	Complexity    int       `json:"complexity"` // 1..5
 	Correct       *bool     `json:"correct,omitempty"`
 	SubmittedAt   time.Time `json:"submitted_at,omitempty"`
+	Topics        []string  `json:"topics,omitempty"`
 }
 
 type Session struct {

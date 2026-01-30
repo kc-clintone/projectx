@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ var eduSubjects = map[string]bool{
 }
 
 func IsEducationalSubject(s string) bool {
+	s = strings.ToLower(strings.TrimSpace(s))
 	_, ok := eduSubjects[s]
 	return ok
 }
@@ -28,6 +30,8 @@ func NewSession(studentID, studentLevel, subject string, tasks []Task) *Session 
 			tasks[i].Complexity = InferComplexity(tasks[i].Prompt, studentLevel)
 		}
 		tasks[i].EstimatedSecs = EstimateTimeForComplexity(tasks[i].Complexity)
+		// extract topics
+		tasks[i].Topics = ExtractTopics(tasks[i].Prompt)
 	}
 	return &Session{
 		ID:           uuid.NewString(),
@@ -61,6 +65,39 @@ func InferComplexity(prompt, level string) int {
 	}
 }
 
+// ExtractTopics returns a small list of topic keywords using naive heuristics
+func ExtractTopics(text string) []string {
+	text = strings.ToLower(text)
+	// split by non alpha
+	fields := strings.FieldsFunc(text, func(r rune) bool { return !(r >= 'a' && r <= 'z') })
+	freq := map[string]int{}
+	for _, f := range fields {
+		if len(f) < 3 { // skip short words
+			continue
+		}
+		freq[f]++
+	}
+	// select top 3
+	type kv struct{ k string; v int }
+	var arr []kv
+	for k, v := range freq {
+		arr = append(arr, kv{k, v})
+	}
+	// simple sort
+	for i := 0; i < len(arr); i++ {
+		for j := i + 1; j < len(arr); j++ {
+			if arr[j].v > arr[i].v {
+				arr[i], arr[j] = arr[j], arr[i]
+			}
+		}
+	}
+	out := []string{}
+	for i := 0; i < len(arr) && i < 3; i++ {
+		out = append(out, arr[i].k)
+	}
+	return out
+}
+
 func GenerateStudyPlan(s *Session) *StudyPlan {
 	plan := &StudyPlan{
 		StudentID: s.StudentID,
@@ -72,7 +109,12 @@ func GenerateStudyPlan(s *Session) *StudyPlan {
 	for _, t := range s.Tasks {
 		// if incorrect, add focus area
 		if t.Correct != nil && !*t.Correct {
-			plan.Focus[t.Prompt] = "review topic, practice similar problems"
+			// use topic if available, else prompt snippet
+			key := "general"
+			if len(t.Topics) > 0 {
+				key = t.Topics[0]
+			}
+			plan.Focus[key] = "review topic, practice similar problems"
 		}
 		// adjust next timer based on speed: if student was faster than estimate, reduce time, else increase
 		est := t.EstimatedSecs
