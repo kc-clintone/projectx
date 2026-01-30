@@ -48,3 +48,23 @@ type StudyPlan struct {
 	Focus      map[string]string `json:"focus"`       // topic -> recommendation
 	NextTimers []int             `json:"next_timers"` // per-task suggested seconds
 }
+
+// TopicSnapshot is a timestamped snapshot of a student's topic frequencies
+type TopicSnapshot struct {
+	Timestamp time.Time      `json:"timestamp"`
+	Topics    map[string]int `json:"topics"`
+}
+
+// ProfileResponse returned by the student profile endpoint
+type ProfileResponse struct {
+	StudentID    string             `json:"student_id"`
+	Topics       map[string]int     `json:"topics"`
+	Achievements []string            `json:"achievements"`
+	Progress     map[string]int     `json:"progress_percent"`
+	WeeklyRecap  []TopicImprovement `json:"weekly_recap"`
+}
+
+type TopicImprovement struct {
+	Topic      string `json:"topic"`
+	ImprovedBy int    `json:"improved_by"`
+}

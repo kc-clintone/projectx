@@ -12,6 +12,7 @@ func setupRouter() http.Handler {
 	router.HandleFunc("/api/v1/session", createSessionHandler).Methods("POST")
 	router.HandleFunc("/api/v1/submit_results", submitResultsHandler).Methods("POST")
 	router.HandleFunc("/api/v1/study_plan/{student_id}", getStudyPlanHandler).Methods("GET")
+	router.HandleFunc("/api/v1/student/{student_id}/profile", getProfileHandler).Methods("GET")
 	router.HandleFunc("/api/v1/student/{student_id}/topics", getStudentTopicsHandler).Methods("GET")
 	router.PathPrefix("/ui/").Handler(http.StripPrefix("/ui/", http.FileServer(http.Dir("./ui"))))
 	return router

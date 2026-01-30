@@ -4,14 +4,20 @@
   <meta charset="utf-8" />
   <title>Study Coach</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 2rem auto; }
+    body { font-family: Arial, sans-serif; max-width: 1000px; margin: 2rem auto; }
     label { display:block; margin-top:1rem }
     textarea { width:100%; height:80px }
     .tasks { margin-top:1rem }
     .task { border:1px solid #ddd; padding:8px; margin-top:6px; display:flex; gap:12px; align-items:center }
     .meta { flex:1 }
-    .controls { width:220px }
+    .controls { width:260px }
     button { cursor:pointer }
+    .profile { border:1px solid #ccc; padding:12px; margin-top:16px }
+    .progress-bar { background:#eee; border-radius:6px; height:14px; overflow:hidden }
+    .progress-fill { height:100%; background:linear-gradient(90deg,#6ad,#3a8); width:0% }
+    .achievements { display:flex; gap:8px; flex-wrap:wrap }
+    .badge { background:#ffd; border:1px solid #cc9; padding:6px 8px; border-radius:6px }
+    .recap { margin-top:8px }
   </style>
 </head>
 <body>
@@ -33,7 +39,19 @@
     <div style="margin-top:12px">
       <button id="startTimers">Start All Timers</button>
       <button id="submitResults">Submit Results</button>
+      <button id="viewProfile">View Profile</button>
     </div>
+  </div>
+
+  <div id="profileArea" class="profile" style="display:none">
+    <h2>Student Profile</h2>
+    <div><strong>ID:</strong> <span id="pf_id"></span></div>
+    <div style="margin-top:8px"><strong>Topics & Progress</strong></div>
+    <div id="pf_topics"></div>
+    <div style="margin-top:8px"><strong>Achievements</strong></div>
+    <div id="pf_achievements" class="achievements"></div>
+    <div style="margin-top:8px"><strong>Weekly Recap</strong></div>
+    <div id="pf_recap" class="recap"></div>
   </div>
 
   <pre id="result"></pre>
@@ -48,6 +66,32 @@
       el.dataset.index = idx
       el.innerHTML = `<div class="meta"><strong>Task ${idx+1}</strong> <div>Prompt: ${t.prompt}</div><div>Estimated: ${t.estimated_secs}s</div><div>Topics: ${(t.topics||[]).join(', ')}</div></div><div class="controls"><div>Elapsed: <span class="actual">0</span>s</div><div style="margin-top:6px"><button class="done">Complete</button> <button class="reset">Reset</button></div><div style="margin-top:6px"><label><input type="checkbox" class="correct" /> Correct</label></div></div>`
       return el
+    }
+
+    function renderProfile(profile){
+      document.getElementById('profileArea').style.display = 'block'
+      document.getElementById('pf_id').textContent = profile.student_id
+      const topicsDiv = document.getElementById('pf_topics')
+      topicsDiv.innerHTML = ''
+      // compute total to normalize progress
+      let total = 0
+      for(const k in profile.topics) total += profile.topics[k]
+      // render each topic with progress (higher count -> more attention needed; invert to progress)
+      const entries = Object.entries(profile.topics).sort((a,b)=>b[1]-a[1])
+      entries.forEach(([k,v])=>{
+        const pct = total===0?0:Math.max(0, 100 - Math.round((v/total)*100))
+        const div = document.createElement('div')
+        div.innerHTML = `<div><strong>${k}</strong> <small>(${v})</small></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`
+        topicsDiv.appendChild(div)
+      })
+
+      const ach = document.getElementById('pf_achievements')
+      ach.innerHTML = ''
+      (profile.achievements||[]).forEach(a=>{ const b=document.createElement('div'); b.className='badge'; b.textContent=a; ach.appendChild(b) })
+
+      const recap = document.getElementById('pf_recap')
+      recap.innerHTML = ''
+      (profile.weekly_recap||[]).forEach(r=>{ const p=document.createElement('div'); p.textContent = `${r.topic}: improved by ${r.improved_by}`; recap.appendChild(p) })
     }
 
     document.getElementById('sessionForm').addEventListener('submit', async (e)=>{
@@ -88,6 +132,19 @@
       })
     })
 
+    async function fetchProfileFor(studentID){
+      const res = await fetch(`/api/v1/student/${studentID}/profile`)
+      if(!res.ok) return null
+      return await res.json()
+    }
+
+    document.getElementById('viewProfile').addEventListener('click', async ()=>{
+      const sid = (currentSession && currentSession.student_id) || document.querySelector('input[name="student_id"]').value
+      if(!sid) return alert('provide student id')
+      const p = await fetchProfileFor(sid)
+      if(p) renderProfile(p)
+    })
+
     document.getElementById('submitResults').addEventListener('click', async ()=>{
       if(!currentSession) return
       // stop all timers
@@ -99,6 +156,9 @@
       if(!res.ok){ alert('submit failed'); return }
       const data = await res.json()
       document.getElementById('result').textContent = JSON.stringify(data, null, 2)
+      // fetch updated profile and display gamified elements
+      const p = await fetchProfileFor(currentSession.student_id)
+      if(p) renderProfile(p)
     })
   </script>
 </body>

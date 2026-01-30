@@ -92,3 +92,31 @@ func getStudentTopicsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(m)
 }
+
+func getProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["student_id"]
+	// load topics and recent snapshot
+	topics, _ := LoadStudentTopics(id)
+	snapshot, _ := LoadSnapshot(id)
+	// build a simple profile response
+	profile := ProfileResponse{
+		StudentID: id,
+		Topics: topics,
+		Achievements: []string{},
+		Progress: map[string]int{},
+		WeeklyRecap: []TopicImprovement{},
+	}
+	if snapshot != nil {
+		// compute weekly recap naive: compare snapshot topics to current (if any)
+		for k, v := range topics {
+			prev := 0
+			if snapshot.Topics != nil { prev = snapshot.Topics[k] }
+			if v > prev {
+				profile.WeeklyRecap = append(profile.WeeklyRecap, TopicImprovement{Topic: k, ImprovedBy: v - prev})
+			}
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(profile)
+}

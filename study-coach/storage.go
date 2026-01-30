@@ -107,3 +107,51 @@ func LoadStudentTopics(studentID string) (map[string]int, error) {
 }
 
 func ErrNotFound() error { return errors.New("not found") }
+
+// SaveProfile persists a student's profile information
+func SaveProfile(studentID string, profile *ProfileResponse) error {
+	if err := ensureDir(); err != nil {
+		return err
+	}
+	b, _ := json.MarshalIndent(profile, "", "  ")
+	path := filepath.Join(storageDir, studentID+".profile.json")
+	return os.WriteFile(path, b, 0o644)
+}
+
+// LoadProfile loads a student's profile information; returns error if not found
+func LoadProfile(studentID string) (*ProfileResponse, error) {
+	path := filepath.Join(storageDir, studentID+".profile.json")
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var profile ProfileResponse
+	if err := json.Unmarshal(b, &profile); err != nil {
+		return nil, err
+	}
+	return &profile, nil
+}
+
+// SaveSnapshot persists a snapshot of the student's progress
+func SaveSnapshot(studentID string, snapshot *TopicSnapshot) error {
+	if err := ensureDir(); err != nil {
+		return err
+	}
+	b, _ := json.MarshalIndent(snapshot, "", "  ")
+	path := filepath.Join(storageDir, studentID+".snapshot.json")
+	return os.WriteFile(path, b, 0o644)
+}
+
+// LoadSnapshot loads a student's progress snapshot; returns error if not found
+func LoadSnapshot(studentID string) (*TopicSnapshot, error) {
+	path := filepath.Join(storageDir, studentID+".snapshot.json")
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var snapshot TopicSnapshot
+	if err := json.Unmarshal(b, &snapshot); err != nil {
+		return nil, err
+	}
+	return &snapshot, nil
+}
