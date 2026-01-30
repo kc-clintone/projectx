@@ -81,4 +81,29 @@ func ListSessions() ([]string, error) {
 	return out, nil
 }
 
+// SaveStudentTopics persists per-student topic frequency map
+func SaveStudentTopics(studentID string, topics map[string]int) error {
+	if err := ensureDir(); err != nil {
+		return err
+	}
+	b, _ := json.MarshalIndent(topics, "", "  ")
+	path := filepath.Join(storageDir, studentID+".topics.json")
+	return os.WriteFile(path, b, 0o644)
+}
+
+// LoadStudentTopics loads per-student topic frequencies; returns empty map if not found
+func LoadStudentTopics(studentID string) (map[string]int, error) {
+	path := filepath.Join(storageDir, studentID+".topics.json")
+	b, err := os.ReadFile(path)
+	if err != nil {
+		// if file missing, return empty map
+		return map[string]int{}, nil
+	}
+	var m map[string]int
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func ErrNotFound() error { return errors.New("not found") }
