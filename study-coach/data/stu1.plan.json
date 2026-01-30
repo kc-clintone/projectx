@@ -1,9 +1,9 @@
 {
   "student_id": "stu1",
   "subject": "math",
-  "created_at": "2026-01-31T00:21:26.209703957+03:00",
+  "created_at": "2026-01-31T00:32:48.144215721+03:00",
   "focus": {
-    "integral of x": "review topic, practice similar problems"
+    "integral": "review topic, practice similar problems"
   },
   "next_timers": [
     54,
