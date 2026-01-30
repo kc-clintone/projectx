@@ -65,6 +65,75 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// --- gamification: update profile, streaks, achievements, snapshots ---
+	now := time.Now()
+	var profile *ProfileResponse
+	p, err := LoadProfile(sess.StudentID)
+	if err != nil {
+		// create default profile
+		profile = &ProfileResponse{StudentID: sess.StudentID, Topics: map[string]int{}, Achievements: []string{}, Progress: map[string]int{}, WeeklyRecap: []TopicImprovement{}, Streak: 0}
+	} else {
+		profile = p
+	}
+
+	// compute streak
+	if profile.LastActive.IsZero() {
+		// first activity
+		profile.Streak = 1
+		AddAchievement(profile, "First Steps")
+	} else {
+		// compare date differences
+		days := int(now.Sub(profile.LastActive).Hours() / 24)
+		if days == 0 {
+			// same day, do not change streak
+		} else if days == 1 {
+			profile.Streak = profile.Streak + 1
+		} else {
+			profile.Streak = 1
+		}
+	}
+	profile.LastActive = now
+
+	// session-based achievements
+	correctCount := 0
+	fastCount := 0
+	total := len(sess.Tasks)
+	for _, t := range sess.Tasks {
+		if t.Correct != nil && *t.Correct {
+			correctCount++
+		}
+		if t.ActualSeconds > 0 && t.ActualSeconds < t.EstimatedSecs {
+			fastCount++
+		}
+	}
+	if total > 0 {
+		if correctCount*100/total >= 80 {
+			AddAchievement(profile, "Accuracy Ace")
+		}
+		if fastCount*2 > total { // more than half
+			AddAchievement(profile, "Quick Solver")
+		}
+	}
+
+	// streak achievements
+	if profile.Streak >= 3 {
+		AddAchievement(profile, "3-Day Streak")
+	}
+	if profile.Streak >= 7 {
+		AddAchievement(profile, "7-Day Streak")
+	}
+
+	// persist profile and snapshot of topics
+	if err := SaveProfile(profile.StudentID, profile); err == nil {
+		// build snapshot from current topics
+		if topics, err2 := LoadStudentTopics(profile.StudentID); err2 == nil {
+			snap := &TopicSnapshot{Timestamp: now, Topics: topics}
+			_ = SaveSnapshot(profile.StudentID, snap)
+		}
+	}
+
+	// --- end gamification update ---
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(plan)
 }
@@ -101,17 +170,19 @@ func getProfileHandler(w http.ResponseWriter, r *http.Request) {
 	snapshot, _ := LoadSnapshot(id)
 	// build a simple profile response
 	profile := ProfileResponse{
-		StudentID: id,
-		Topics: topics,
+		StudentID:    id,
+		Topics:       topics,
 		Achievements: []string{},
-		Progress: map[string]int{},
-		WeeklyRecap: []TopicImprovement{},
+		Progress:     map[string]int{},
+		WeeklyRecap:  []TopicImprovement{},
 	}
 	if snapshot != nil {
 		// compute weekly recap naive: compare snapshot topics to current (if any)
 		for k, v := range topics {
 			prev := 0
-			if snapshot.Topics != nil { prev = snapshot.Topics[k] }
+			if snapshot.Topics != nil {
+				prev = snapshot.Topics[k]
+			}
 			if v > prev {
 				profile.WeeklyRecap = append(profile.WeeklyRecap, TopicImprovement{Topic: k, ImprovedBy: v - prev})
 			}
@@ -119,4 +190,14 @@ func getProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(profile)
+}
+
+// helper to append unique achievement
+func AddAchievement(p *ProfileResponse, name string) {
+	for _, a := range p.Achievements {
+		if a == name {
+			return
+		}
+	}
+	p.Achievements = append(p.Achievements, name)
 }
