@@ -1,0 +1,22 @@
+{
+  "student_id": "stu1",
+  "topics": {},
+  "achievements": [
+    "First Steps"
+  ],
+  "earned_badges": [
+    {
+      "id": "first_steps",
+      "name": "First Steps",
+      "icon": "🏁",
+      "color": "#6ad",
+      "description": "Completed your first session",
+      "points": 10
+    }
+  ],
+  "points": 10,
+  "progress_percent": {},
+  "weekly_recap": [],
+  "streak": 1,
+  "last_active": "2026-01-31T03:58:29.256295941+03:00"
+}
