@@ -1,0 +1,1143 @@
+{
+  "sess_1769810036466171257": {
+    "ID": "sess_1769810036466171257",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "High School"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T00:53:56.466180286+03:00"
+  },
+  "sess_1769810709911096468": {
+    "ID": "sess_1769810709911096468",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "High School"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T01:05:09.911107976+03:00"
+  },
+  "sess_1769819524587043799": {
+    "ID": "sess_1769819524587043799",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "High School"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T03:32:04.587057587+03:00"
+  },
+  "sess_1769820349147206737": {
+    "ID": "sess_1769820349147206737",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "High School"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T03:45:49.147217422+03:00"
+  },
+  "sess_1769820427597082837": {
+    "ID": "sess_1769820427597082837",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "High School"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T03:47:07.597089385+03:00"
+  },
+  "sess_1769820848583566186": {
+    "ID": "sess_1769820848583566186",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "High School"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T03:54:08.583572035+03:00"
+  },
+  "sess_1769822480087608701": {
+    "ID": "sess_1769822480087608701",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "Elementary"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T04:21:20.087618582+03:00"
+  },
+  "sess_1769823548461180894": {
+    "ID": "sess_1769823548461180894",
+    "Profile": {
+      "name": "Tomlee",
+      "grade": "Elementary"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T04:39:08.461198394+03:00"
+  },
+  "sess_1769823783950289237": {
+    "ID": "sess_1769823783950289237",
+    "Profile": {
+      "name": "Tomlee",
+      "grade": "Elementary"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T04:43:03.950297536+03:00"
+  },
+  "sess_1769823987810313962": {
+    "ID": "sess_1769823987810313962",
+    "Profile": {
+      "name": "Tomlee",
+      "grade": "Elementary"
+    },
+    "Questions": null,
+    "History": null,
+    "CreatedAt": "2026-01-31T04:46:27.810322207+03:00"
+  },
+  "sess_1769824332121670152": {
+    "ID": "sess_1769824332121670152",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "Elementary"
+    },
+    "Questions": [
+      {
+        "id": "m1",
+        "type": "MCQ",
+        "text": "What is the sum of 15 and 27?",
+        "options": [
+          "32",
+          "42",
+          "40",
+          "52"
+        ],
+        "correctIndex": 1,
+        "explanation": "To find the sum, add 15 and 27. 10 plus 20 is 30, and 5 plus 7 is 12. Adding 30 and 12 gives 42.",
+        "timeLimitSeconds": 30
+      },
+      {
+        "id": "m2",
+        "type": "OPEN",
+        "text": "If Sarah has 20 pencils and gives 6 to her brother, how many pencils does she have remaining?",
+        "explanation": "This is a subtraction problem. 20 minus 6 equals 14. Sarah has 14 pencils remaining.",
+        "timeLimitSeconds": 45
+      },
+      {
+        "id": "m3",
+        "type": "MCQ",
+        "text": "What is 4 multiplied by 5?",
+        "options": [
+          "9",
+          "15",
+          "20",
+          "25"
+        ],
+        "correctIndex": 2,
+        "explanation": "Multiplication is repeated addition. 4 times 5 is the same as 5 + 5 + 5 + 5, which equals 20.",
+        "timeLimitSeconds": 30
+      },
+      {
+        "id": "m4",
+        "type": "OPEN",
+        "text": "A square has sides that are each 5 centimeters long. What is the perimeter of the square?",
+        "explanation": "The perimeter of a square is the sum of all four sides. Since all sides are equal, you calculate 5 + 5 + 5 + 5 or 5 x 4, which equals 20 centimeters.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "m5",
+        "type": "MCQ",
+        "text": "Which of these shapes has exactly three sides?",
+        "options": [
+          "Triangle",
+          "Square",
+          "Pentagon",
+          "Rectangle"
+        ],
+        "explanation": "A triangle is defined as a polygon with three edges and three vertices.",
+        "timeLimitSeconds": 30
+      }
+    ],
+    "History": [
+      {
+        "timestamp": "2026-01-31T04:53:57.410844491+03:00",
+        "result": {
+          "totalQuestions": 5,
+          "correctAnswers": 0,
+          "totalTimeSpent": 71.888,
+          "performances": [
+            {
+              "questionId": "m1",
+              "timeSpentSeconds": 15.904,
+              "attempts": 1,
+              "isCorrect": true,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "m2",
+              "timeSpentSeconds": 19.368,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "14",
+              "revisits": 0
+            },
+            {
+              "questionId": "m3",
+              "timeSpentSeconds": 7.179,
+              "attempts": 1,
+              "isCorrect": true,
+              "userResponse": "2",
+              "revisits": 0
+            },
+            {
+              "questionId": "m4",
+              "timeSpentSeconds": 21.005,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "20",
+              "revisits": 0
+            },
+            {
+              "questionId": "m5",
+              "timeSpentSeconds": 8.432,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "0",
+              "revisits": 0
+            }
+          ],
+          "mode": "TIMED_QUESTION"
+        },
+        "analysis": {
+          "summary": "The student demonstrated proficiency in word-based subtraction and geometric perimeter calculations but struggled with basic two-digit addition, multiplication, and shape identification.",
+          "strengths": [
+            "Subtraction word problems",
+            "Calculating the perimeter of a square"
+          ],
+          "weaknesses": [
+            "Two-digit addition",
+            "Basic multiplication facts",
+            "Geometric shape terminology"
+          ],
+          "recommendations": [
+            "Practice two-digit addition with regrouping.",
+            "Review and memorize basic multiplication tables, focusing on factors 4 and 5.",
+            "Study the names and characteristics of basic 2D shapes like triangles, squares, and circles."
+          ],
+          "gradedPerformances": [
+            {
+              "questionId": "m1",
+              "isCorrect": false,
+              "aiFeedback": "The sum of 15 and 27 is 42. It appears there was a calculation error."
+            },
+            {
+              "questionId": "m2",
+              "isCorrect": true,
+              "aiFeedback": "Well done! You correctly subtracted 6 from 20 to find the remainder."
+            },
+            {
+              "questionId": "m3",
+              "isCorrect": false,
+              "aiFeedback": "4 times 5 equals 20. Practice multiplication tables to improve speed and accuracy."
+            },
+            {
+              "questionId": "m4",
+              "isCorrect": true,
+              "aiFeedback": "Correct! You accurately calculated the perimeter by summing all four sides of the square."
+            },
+            {
+              "questionId": "m5",
+              "isCorrect": false,
+              "aiFeedback": "A shape with exactly three sides is a triangle. '0' is not the correct name for this shape."
+            }
+          ]
+        }
+      }
+    ],
+    "CreatedAt": "2026-01-31T04:52:12.121679263+03:00"
+  },
+  "sess_1769825075026423551": {
+    "ID": "sess_1769825075026423551",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "Elementary"
+    },
+    "Questions": [
+      {
+        "id": "m1",
+        "type": "MCQ",
+        "text": "What is 15 plus 7?",
+        "options": [
+          "21",
+          "22",
+          "23",
+          "24"
+        ],
+        "correctIndex": 1,
+        "explanation": "Adding 15 and 7 results in 22.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "m2",
+        "type": "MCQ",
+        "text": "What is 25 minus 9?",
+        "options": [
+          "14",
+          "15",
+          "16",
+          "17"
+        ],
+        "correctIndex": 2,
+        "explanation": "Subtracting 9 from 25 results in 16.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "m3",
+        "type": "MCQ",
+        "text": "What is 3 multiplied by 4?",
+        "options": [
+          "7",
+          "10",
+          "12",
+          "15"
+        ],
+        "correctIndex": 2,
+        "explanation": "Multiplying 3 by 4 equals 12.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "m4",
+        "type": "MCQ",
+        "text": "In the number 52, what is the value of the digit 5?",
+        "options": [
+          "5",
+          "50",
+          "500",
+          "2"
+        ],
+        "correctIndex": 1,
+        "explanation": "The digit 5 is in the tens place, so it represents 5 tens, or 50.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "m5",
+        "type": "MCQ",
+        "text": "How many sides does a rectangle have?",
+        "options": [
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "correctIndex": 1,
+        "explanation": "A rectangle is a quadrilateral, which means it has 4 sides.",
+        "timeLimitSeconds": 60
+      }
+    ],
+    "History": [
+      {
+        "timestamp": "2026-01-31T05:10:24.766978689+03:00",
+        "result": {
+          "totalQuestions": 5,
+          "correctAnswers": 0,
+          "totalTimeSpent": 268.55199999999996,
+          "performances": [
+            {
+              "questionId": "q1",
+              "timeSpentSeconds": 57.464,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "0",
+              "revisits": 0
+            },
+            {
+              "questionId": "q2",
+              "timeSpentSeconds": 69.406,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "Is a weaker version of the virus and help in preventing contacting the same virus\n",
+              "revisits": 0
+            },
+            {
+              "questionId": "q3",
+              "timeSpentSeconds": 39.736,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "3",
+              "revisits": 0
+            },
+            {
+              "questionId": "q4",
+              "timeSpentSeconds": 39.366,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "It expands",
+              "revisits": 0
+            },
+            {
+              "questionId": "q5",
+              "timeSpentSeconds": 62.58,
+              "attempts": 3,
+              "isCorrect": false,
+              "userResponse": "0",
+              "revisits": 0
+            }
+          ],
+          "mode": "OVERALL_TIMED"
+        },
+        "analysis": {
+          "summary": "The student demonstrates a strong conceptual understanding of preventive medicine but faces challenges with specific biological terminology and the mechanics of human anatomy.",
+          "strengths": [
+            "Clear understanding of how vaccinations function to protect the body",
+            "Ability to articulate complex biological concepts in simple terms"
+          ],
+          "weaknesses": [
+            "Specific terminology for cell biology and cardiac anatomy",
+            "Understanding of respiratory muscle movements during exhalation",
+            "Identification of biological levels of organization"
+          ],
+          "recommendations": [
+            "Use anatomical diagrams to memorize the parts of the heart, specifically the septum.",
+            "Practice identifying the difference between the diaphragm's contraction and relaxation phases.",
+            "Review the vocabulary related to biological organization: cells, tissues, organs, and systems."
+          ],
+          "gradedPerformances": [
+            {
+              "questionId": "q1",
+              "isCorrect": false,
+              "aiFeedback": "The nucleus is often called the 'brain' of the cell because it controls all cellular activities."
+            },
+            {
+              "questionId": "q2",
+              "isCorrect": true,
+              "aiFeedback": "Great job! You correctly explained that a vaccine uses a weakened version of a virus to train the immune system."
+            },
+            {
+              "questionId": "q3",
+              "isCorrect": false,
+              "aiFeedback": "The septum is the specific term for the wall that divides the left and right sides of the heart."
+            },
+            {
+              "questionId": "q4",
+              "isCorrect": false,
+              "aiFeedback": "Actually, when you breathe out, your diaphragm relaxes and moves upward to help push air from the lungs."
+            },
+            {
+              "questionId": "q5",
+              "isCorrect": false,
+              "aiFeedback": "A group of similar cells working together is called a tissue."
+            }
+          ]
+        }
+      },
+      {
+        "timestamp": "2026-01-31T05:20:18.268314016+03:00",
+        "result": {
+          "totalQuestions": 5,
+          "correctAnswers": 0,
+          "totalTimeSpent": 95.408,
+          "performances": [
+            {
+              "questionId": "m1",
+              "timeSpentSeconds": 9.543,
+              "attempts": 1,
+              "isCorrect": true,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "m2",
+              "timeSpentSeconds": 7.965,
+              "attempts": 1,
+              "isCorrect": true,
+              "userResponse": "2",
+              "revisits": 0
+            },
+            {
+              "questionId": "m3",
+              "timeSpentSeconds": 16.412,
+              "attempts": 1,
+              "isCorrect": true,
+              "userResponse": "2",
+              "revisits": 0
+            },
+            {
+              "questionId": "m4",
+              "timeSpentSeconds": 14.929,
+              "attempts": 1,
+              "isCorrect": true,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "m5",
+              "timeSpentSeconds": 46.559,
+              "attempts": 1,
+              "isCorrect": true,
+              "userResponse": "1",
+              "revisits": 0
+            }
+          ],
+          "mode": "OVERALL_TIMED"
+        },
+        "analysis": {
+          "summary": "The student scored 0% on the quiz, answering none of the questions correctly. The responses suggest a complete lack of understanding of the material or a potential issue with the test-taking process, as the answers provided were very low single-digit numbers.",
+          "strengths": [],
+          "weaknesses": [
+            "Basic addition and subtraction",
+            "Single-digit multiplication",
+            "Place value recognition",
+            "Basic geometry properties"
+          ],
+          "recommendations": [
+            "Review basic arithmetic operations for numbers up to 50.",
+            "Practice identifying place values (tens and ones) in two-digit numbers.",
+            "Use visual aids to study the characteristics of basic 2D shapes.",
+            "Verify if the student understands how to input numerical answers into the system."
+          ],
+          "gradedPerformances": [
+            {
+              "questionId": "m1",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. 15 plus 7 equals 22, not 1."
+            },
+            {
+              "questionId": "m2",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. 25 minus 9 equals 16, not 2."
+            },
+            {
+              "questionId": "m3",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. 3 multiplied by 4 equals 12, not 2."
+            },
+            {
+              "questionId": "m4",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. In the number 52, the 5 is in the tens place, so its value is 50."
+            },
+            {
+              "questionId": "m5",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. A rectangle is a four-sided polygon."
+            }
+          ]
+        }
+      }
+    ],
+    "CreatedAt": "2026-01-31T05:04:35.0264384+03:00"
+  },
+  "sess_1769826321431312218": {
+    "ID": "sess_1769826321431312218",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "Elementary"
+    },
+    "Questions": [
+      {
+        "id": "q1",
+        "type": "MCQ",
+        "text": "What is the sum of 15 and 27?",
+        "options": [
+          "32",
+          "42",
+          "43",
+          "52"
+        ],
+        "explanation": "To find the sum, add 15 and 27. 5 plus 7 is 12 (carry the 1), and 1 plus 2 plus the carried 1 is 4. The result is 42.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "q2",
+        "type": "OPEN",
+        "text": "If you have 50 candies and you give 15 to a friend, how many candies do you have left?",
+        "explanation": "This is a subtraction problem: 50 - 15. Subtracting 10 from 50 gives 40, and subtracting 5 more gives 35.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "q3",
+        "type": "MCQ",
+        "text": "Which number is in the hundreds place in the number 4,582?",
+        "options": [
+          "4",
+          "5",
+          "8",
+          "2"
+        ],
+        "explanation": "In the number 4,582, the 2 is in the ones place, 8 is in the tens place, 5 is in the hundreds place, and 4 is in the thousands place.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "q4",
+        "type": "OPEN",
+        "text": "What is 4 multiplied by 6?",
+        "explanation": "Multiplication is repeated addition. Adding 4 six times (4+4+4+4+4+4) or adding 6 four times (6+6+6+6) equals 24.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "q5",
+        "type": "MCQ",
+        "text": "How many sides does a pentagon have?",
+        "options": [
+          "4",
+          "5",
+          "6",
+          "8"
+        ],
+        "explanation": "A pentagon is a polygon with five sides and five angles.",
+        "timeLimitSeconds": 60
+      }
+    ],
+    "History": [
+      {
+        "timestamp": "2026-01-31T05:27:01.715878839+03:00",
+        "result": {
+          "totalQuestions": 5,
+          "correctAnswers": 0,
+          "totalTimeSpent": 68.299,
+          "performances": [
+            {
+              "questionId": "q1",
+              "timeSpentSeconds": 14.227,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "q2",
+              "timeSpentSeconds": 19.592,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "35",
+              "revisits": 0
+            },
+            {
+              "questionId": "q3",
+              "timeSpentSeconds": 11.148,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "q4",
+              "timeSpentSeconds": 11.304,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "24",
+              "revisits": 0
+            },
+            {
+              "questionId": "q5",
+              "timeSpentSeconds": 12.027999999999999,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "1",
+              "revisits": 0
+            }
+          ],
+          "mode": "OVERALL_TIMED"
+        },
+        "analysis": {
+          "summary": "The student shows proficiency in multiplication and subtraction but needs significant support in basic addition, place value identification, and geometric shapes.",
+          "strengths": [
+            "Subtraction word problems",
+            "Basic multiplication facts"
+          ],
+          "weaknesses": [
+            "Two-digit addition",
+            "Place value concepts",
+            "Polygon identification"
+          ],
+          "recommendations": [
+            "Practice regrouping techniques for two-digit addition",
+            "Use a place value chart to identify digits in the thousands, hundreds, tens, and ones places",
+            "Review the names and side counts of common polygons such as pentagons and quadrilaterals"
+          ],
+          "gradedPerformances": [
+            {
+              "questionId": "q1",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. The sum of 15 and 27 is 42."
+            },
+            {
+              "questionId": "q2",
+              "isCorrect": true,
+              "aiFeedback": "Correct. You correctly identified that 50 minus 15 leaves 35 candies."
+            },
+            {
+              "questionId": "q3",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. In the number 4,582, the digit 5 is in the hundreds place."
+            },
+            {
+              "questionId": "q4",
+              "isCorrect": true,
+              "aiFeedback": "Well done. You accurately calculated that 4 multiplied by 6 equals 24."
+            },
+            {
+              "questionId": "q5",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. A pentagon is a five-sided polygon."
+            }
+          ]
+        }
+      },
+      {
+        "timestamp": "2026-01-31T05:27:07.387576227+03:00",
+        "result": {
+          "totalQuestions": 5,
+          "correctAnswers": 0,
+          "totalTimeSpent": 63.566,
+          "performances": [
+            {
+              "questionId": "q1",
+              "timeSpentSeconds": 14.227,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "q2",
+              "timeSpentSeconds": 19.592,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "35",
+              "revisits": 0
+            },
+            {
+              "questionId": "q3",
+              "timeSpentSeconds": 11.148,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "q4",
+              "timeSpentSeconds": 11.304,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "24",
+              "revisits": 0
+            },
+            {
+              "questionId": "q5",
+              "timeSpentSeconds": 7.295,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "1",
+              "revisits": 0
+            }
+          ],
+          "mode": "OVERALL_TIMED"
+        },
+        "analysis": {
+          "summary": "The student demonstrated basic proficiency in subtraction and multiplication but struggled significantly with multi-digit addition, place value identification, and geometry. The recurring response of '1' for incorrect answers suggests the student may be guessing or lacks confidence in these specific areas.",
+          "strengths": [
+            "Subtraction involving regrouping",
+            "Foundational multiplication facts"
+          ],
+          "weaknesses": [
+            "Two-digit addition with carrying",
+            "Identifying specific place values within numbers",
+            "Knowledge of geometric shape properties"
+          ],
+          "recommendations": [
+            "Engage in practice problems for two-digit addition to improve accuracy",
+            "Review place value positions (ones, tens, hundreds, thousands) using visual charts",
+            "Study the names and properties of common polygons like pentagons and quadrilaterals"
+          ],
+          "gradedPerformances": [
+            {
+              "questionId": "q1",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. The sum of 15 and 27 is actually 42. While the provided answer key listed 32, your response of 1 was also incorrect."
+            },
+            {
+              "questionId": "q2",
+              "isCorrect": true,
+              "aiFeedback": "Correct! You successfully subtracted 15 from 50 to get 35."
+            },
+            {
+              "questionId": "q3",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. In the number 4,582, the number 5 is in the hundreds place. The digit 4 is in the thousands place."
+            },
+            {
+              "questionId": "q4",
+              "isCorrect": true,
+              "aiFeedback": "Correct! You correctly identified that 4 multiplied by 6 equals 24."
+            },
+            {
+              "questionId": "q5",
+              "isCorrect": false,
+              "aiFeedback": "Incorrect. A pentagon has 5 sides. Identifying shapes by their number of sides is an area for further study."
+            }
+          ]
+        }
+      }
+    ],
+    "CreatedAt": "2026-01-31T05:25:21.431381553+03:00"
+  },
+  "sess_1769828606788987481": {
+    "ID": "sess_1769828606788987481",
+    "Profile": {
+      "name": "Tomlee Abila",
+      "grade": "Elementary"
+    },
+    "Questions": [
+      {
+        "id": "gen_sci_01",
+        "type": "MCQ",
+        "text": "Which part of a cell acts as the 'control center' by directing most of its activities, such as growth and reproduction?",
+        "options": [
+          "Cell Wall",
+          "Nucleus",
+          "Cytoplasm",
+          "Vacuole"
+        ],
+        "explanation": "The nucleus is the command center of the cell. It contains the cell's DNA and coordinates important functions like metabolism and cell division.",
+        "timeLimitSeconds": 45
+      },
+      {
+        "id": "gen_sci_02",
+        "type": "OPEN",
+        "text": "What is vaccination and why is it important for human health?",
+        "explanation": "Vaccination is the process of introducing a vaccine into the body to produce immunity to a specific disease. It is important because it trains the immune system to recognize and fight pathogens like viruses or bacteria without the person having to get sick first.",
+        "timeLimitSeconds": 180
+      },
+      {
+        "id": "gen_sci_03",
+        "type": "MCQ",
+        "text": "When you breathe out (exhale), what happens to your diaphragm?",
+        "options": [
+          "It contracts and moves down",
+          "It stays completely still",
+          "It relaxes and moves upwards",
+          "It turns into a flat sheet"
+        ],
+        "explanation": "During exhalation, the diaphragm relaxes and moves upwards into a dome shape. This reduces the space in the chest cavity and helps push air out of the lungs.",
+        "timeLimitSeconds": 60
+      },
+      {
+        "id": "gen_sci_04",
+        "type": "OPEN",
+        "text": "Briefly explain the main difference between a 'tissue' and an 'organ' in a living organism.",
+        "explanation": "A tissue is a group of similar cells that work together to perform a specific task. An organ is a more complex structure made of different types of tissues working together to perform a larger function, such as the heart pumping blood.",
+        "timeLimitSeconds": 150
+      },
+      {
+        "id": "gen_sci_05",
+        "type": "MCQ",
+        "text": "Which of these factors is most likely to increase the rate of photosynthesis in a green plant?",
+        "options": [
+          "Total darkness",
+          "Extreme cold",
+          "Increased light intensity",
+          "Lack of water"
+        ],
+        "explanation": "Photosynthesis is the process by which plants make food using light. Increasing the light intensity (up to a certain point) provides more energy for the plant to carry out this chemical reaction faster.",
+        "timeLimitSeconds": 45
+      }
+    ],
+    "History": [
+      {
+        "timestamp": "2026-01-31T06:05:56.10398358+03:00",
+        "result": {
+          "totalQuestions": 5,
+          "correctAnswers": 0,
+          "totalTimeSpent": 76.709,
+          "performances": [
+            {
+              "questionId": "gen_sci_01",
+              "timeSpentSeconds": 14.312,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_02",
+              "timeSpentSeconds": 8.691,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "ksdfdg",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_03",
+              "timeSpentSeconds": 26.682,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "0",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_04",
+              "timeSpentSeconds": 8.945,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "rlasge",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_05",
+              "timeSpentSeconds": 18.079,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "2",
+              "revisits": 0
+            }
+          ],
+          "mode": "OVERALL_TIMED"
+        },
+        "analysis": {
+          "summary": "The student was unable to correctly answer any of the questions in this general science assessment. The responses to multiple-choice questions were incorrect, and the open-ended responses consisted of nonsensical text strings, suggesting either a lack of understanding or a lack of engagement with the material.",
+          "strengths": [],
+          "weaknesses": [
+            "Fundamental understanding of cell structure and functions",
+            "Knowledge of the human respiratory system and diaphragm movement",
+            "Understanding of medical health concepts like vaccination",
+            "Ability to distinguish between levels of biological organization such as tissues and organs",
+            "Knowledge of plant biology and the requirements for photosynthesis"
+          ],
+          "recommendations": [
+            "Review the basic parts of a cell, specifically focusing on the nucleus as the control center.",
+            "Study the respiratory system to understand how the diaphragm behaves during inhalation and exhalation.",
+            "Read introductory material on how vaccines help the immune system fight diseases.",
+            "Learn the biological hierarchy from cells to tissues to organs.",
+            "Revisit the process of photosynthesis and the roles of light and carbon dioxide."
+          ],
+          "gradedPerformances": [
+            {
+              "questionId": "gen_sci_01",
+              "isCorrect": false,
+              "aiFeedback": "The response '1' is incorrect. The expected answer provided was 'Cell Wall', though typically the nucleus is considered the control center."
+            },
+            {
+              "questionId": "gen_sci_02",
+              "isCorrect": false,
+              "aiFeedback": "The response 'ksdfdg' is not a valid explanation of vaccination; it appears to be random characters."
+            },
+            {
+              "questionId": "gen_sci_03",
+              "isCorrect": false,
+              "aiFeedback": "The response '0' is incorrect. When you breathe out, the diaphragm usually relaxes and moves upward."
+            },
+            {
+              "questionId": "gen_sci_04",
+              "isCorrect": false,
+              "aiFeedback": "The response 'rlasge' is nonsensical and does not provide an explanation of the differences between tissues and organs."
+            },
+            {
+              "questionId": "gen_sci_05",
+              "isCorrect": false,
+              "aiFeedback": "The response '2' is incorrect. Please review the factors that contribute to the rate of photosynthesis in plants."
+            }
+          ]
+        }
+      },
+      {
+        "timestamp": "2026-01-31T06:05:57.109246227+03:00",
+        "result": {
+          "totalQuestions": 5,
+          "correctAnswers": 0,
+          "totalTimeSpent": 62.843,
+          "performances": [
+            {
+              "questionId": "gen_sci_01",
+              "timeSpentSeconds": 14.312,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_02",
+              "timeSpentSeconds": 8.691,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "ksdfdg",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_03",
+              "timeSpentSeconds": 26.682,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "0",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_04",
+              "timeSpentSeconds": 8.945,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "rlasge",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_05",
+              "timeSpentSeconds": 4.213,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "2",
+              "revisits": 0
+            }
+          ],
+          "mode": "OVERALL_TIMED"
+        },
+        "analysis": {
+          "summary": "The student demonstrated a lack of understanding or focus during this assessment. Every response was either incorrect or consisted of nonsensical text strings, suggesting a need for significant review of basic biological concepts and better engagement with the testing format.",
+          "strengths": [
+            "No strengths identified from the current submission."
+          ],
+          "weaknesses": [
+            "Basic cell biology and terminology",
+            "Human respiratory mechanics",
+            "Understanding of the levels of biological organization",
+            "Effectively communicating scientific explanations"
+          ],
+          "recommendations": [
+            "Review the basic parts of a cell, specifically distinguishing between the cell wall and the nucleus.",
+            "Study the human respiratory system to understand how the diaphragm behaves during inhalation and exhalation.",
+            "Practice defining biological hierarchy, specifically the relationship between cells, tissues, and organs.",
+            "Engage in focused reading exercises to improve the ability to provide coherent written responses."
+          ],
+          "gradedPerformances": [
+            {
+              "questionId": "gen_sci_01",
+              "isCorrect": false,
+              "aiFeedback": "The response '1' did not match the expected answer. The control center of a cell is generally the nucleus, while the cell wall provides structure."
+            },
+            {
+              "questionId": "gen_sci_02",
+              "isCorrect": false,
+              "aiFeedback": "The response provided was nonsensical text and did not explain the importance of vaccines for immunity."
+            },
+            {
+              "questionId": "gen_sci_03",
+              "isCorrect": false,
+              "aiFeedback": "The selection '0' was incorrect. Understanding the movement of the diaphragm is key to understanding the breathing process."
+            },
+            {
+              "questionId": "gen_sci_04",
+              "isCorrect": false,
+              "aiFeedback": "The response was unintelligible and failed to distinguish between the complexity of tissues and organs."
+            },
+            {
+              "questionId": "gen_sci_05",
+              "isCorrect": false,
+              "aiFeedback": "The response '2' was incorrect based on the provided answer key regarding photosynthesis factors."
+            }
+          ]
+        }
+      },
+      {
+        "timestamp": "2026-01-31T06:06:30.9426925+03:00",
+        "result": {
+          "totalQuestions": 5,
+          "correctAnswers": 0,
+          "totalTimeSpent": 64.023,
+          "performances": [
+            {
+              "questionId": "gen_sci_01",
+              "timeSpentSeconds": 14.312,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "1",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_02",
+              "timeSpentSeconds": 8.691,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "ksdfdg",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_03",
+              "timeSpentSeconds": 26.682,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "0",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_04",
+              "timeSpentSeconds": 8.945,
+              "attempts": 0,
+              "isCorrect": false,
+              "userResponse": "rlasge",
+              "revisits": 0
+            },
+            {
+              "questionId": "gen_sci_05",
+              "timeSpentSeconds": 5.393,
+              "attempts": 1,
+              "isCorrect": false,
+              "userResponse": "2",
+              "revisits": 0
+            }
+          ],
+          "mode": "OVERALL_TIMED"
+        },
+        "analysis": {
+          "summary": "The student failed to answer any questions correctly. The multiple-choice responses did not match the provided key, and the open-ended responses consisted of nonsensical characters rather than scientific explanations.",
+          "strengths": [
+            "Completion of all assessment items"
+          ],
+          "weaknesses": [
+            "Cellular biology",
+            "Human respiratory mechanics",
+            "Photosynthesis factors",
+            "Written articulation and literacy"
+          ],
+          "recommendations": [
+            "Review the basic parts of a cell and their functions, specifically the nucleus and cell wall.",
+            "Study the mechanics of the human respiratory system, focusing on the diaphragm's role.",
+            "Revisit the environmental requirements for photosynthesis in plants.",
+            "Practice writing clear, full-sentence definitions for scientific terminology."
+          ],
+          "gradedPerformances": [
+            {
+              "questionId": "gen_sci_01",
+              "isCorrect": false,
+              "aiFeedback": "The response '1' is incorrect. Based on the answer key, 'Cell Wall' was the expected answer."
+            },
+            {
+              "questionId": "gen_sci_02",
+              "isCorrect": false,
+              "aiFeedback": "The response was unintelligible. Vaccination is the process of building immunity to protect the body from diseases."
+            },
+            {
+              "questionId": "gen_sci_03",
+              "isCorrect": false,
+              "aiFeedback": "The response '0' is incorrect. The answer key indicated that the diaphragm 'contracts and moves down' during the process."
+            },
+            {
+              "questionId": "gen_sci_04",
+              "isCorrect": false,
+              "aiFeedback": "The response was nonsensical. A tissue is a group of similar cells, whereas an organ is a collection of tissues working together."
+            },
+            {
+              "questionId": "gen_sci_05",
+              "isCorrect": false,
+              "aiFeedback": "The response '2' is incorrect. The key specified 'Total darkness' as the factor for this question."
+            }
+          ]
+        }
+      }
+    ],
+    "CreatedAt": "2026-01-31T06:03:26.789080993+03:00"
+  }
+}
