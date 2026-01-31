@@ -27,17 +27,31 @@ const app = {
     },
 
     setLoading(isLoading, text = "Loading...") {
-        const el = document.getElementById('loading-overlay');
+        let el = document.getElementById('loading-overlay');
+        
+        // Dynamically create overlay if it doesn't exist
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'loading-overlay';
+            el.className = 'hidden fixed inset-0 bg-white/60 backdrop-blur-sm z-[60] flex flex-col items-center justify-center gap-6 text-center px-4';
+            el.innerHTML = `
+                <div class="relative">
+                   <div class="w-20 h-20 border-4 border-indigo-100 rounded-full"></div>
+                   <div class="w-20 h-20 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0"></div>
+                </div>
+                <p id="loading-text" class="text-indigo-900 font-bold animate-pulse text-xl">Processing...</p>
+            `;
+            document.body.appendChild(el);
+        }
+
         const txt = document.getElementById('loading-text');
-        if (el && txt) {
-            if (isLoading) {
-                txt.textContent = text;
-                el.classList.remove('hidden');
-                el.classList.add('fade-in');
-            } else {
-                el.classList.add('hidden');
-                el.classList.remove('fade-in');
-            }
+        if (isLoading) {
+            if (txt) txt.textContent = text;
+            el.classList.remove('hidden');
+            el.classList.add('fade-in');
+        } else {
+            el.classList.add('hidden');
+            el.classList.remove('fade-in');
         }
     },
 
@@ -642,7 +656,15 @@ const app = {
         const idx = this.state.currentQuestionIndex;
         const p = this.state.performances[idx];
         p.timeSpentSeconds += delta;
-        p.userResponse = this.state.userResponses[idx] || "";
+        
+        const resp = this.state.userResponses[idx];
+        const q = this.state.questions[idx];
+        if (q.type === 'MCQ' && resp && q.options[resp]) {
+            p.userResponse = q.options[resp];
+        } else {
+            p.userResponse = resp || "";
+        }
+        
         p.revisits = (this.state.visitCounts[idx] || 1) - 1;
     },
 
@@ -653,8 +675,8 @@ const app = {
         // Update performance immediately for MCQ logic
         const p = this.state.performances[currentIdx];
         p.attempts = (p.attempts || 0) + 1;
-        p.isCorrect = idx === this.state.questions[currentIdx].correctIndex;
-        p.userResponse = idx.toString();
+        p.isCorrect = idx == this.state.questions[currentIdx].correctIndex;
+        p.userResponse = this.state.questions[currentIdx].options[idx];
 
         this.renderQuiz(); // Re-render to show selection
     },
