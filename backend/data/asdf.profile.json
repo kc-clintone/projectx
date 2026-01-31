@@ -1,0 +1,40 @@
+{
+  "student_id": "asdf",
+  "topics": {},
+  "achievements": [
+    "First Steps",
+    "Accuracy Ace",
+    "Quick Solver"
+  ],
+  "earned_badges": [
+    {
+      "id": "first_steps",
+      "name": "First Steps",
+      "icon": "🏁",
+      "color": "#6ad",
+      "description": "Completed your first session",
+      "points": 10
+    },
+    {
+      "id": "accuracy_ace",
+      "name": "Accuracy Ace",
+      "icon": "🎯",
+      "color": "#3a8",
+      "description": "80%+ accuracy in a session",
+      "points": 20
+    },
+    {
+      "id": "quick_solver",
+      "name": "Quick Solver",
+      "icon": "⚡",
+      "color": "#f6a",
+      "description": "Solved most tasks faster than estimate",
+      "points": 15
+    }
+  ],
+  "points": 45,
+  "progress_percent": {},
+  "weekly_recap": [],
+  "streak": 1,
+  "last_active": "2026-01-31T06:11:04.05241509+03:00"
+}

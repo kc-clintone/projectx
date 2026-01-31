@@ -1,12 +1,17 @@
-import { h, render } from 'https://unpkg.com/preact@10.16.0/dist/preact.mjs';
-import { useState, useEffect, useRef } from 'https://unpkg.com/preact@10.16.0/hooks/dist/hooks.module.js';
+// Use global UMD build loaded in index.html to avoid bare module specifier issues
+const { h, render } = window.preact;
+const { useState, useEffect, useRef } = window.preactHooks;
 
 const api = {
+  register: (body)=>fetch('/api/v1/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>({ok:r.ok,status:r.status})),
+  login: (body)=>fetch('/api/v1/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>({ok:r.ok,status:r.status})),
+  me: ()=>fetch('/api/v1/me').then(r=>r.ok?r.json():null),
   createSession: (body)=>fetch('/api/v1/session',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()),
   submitResults: (body)=>fetch('/api/v1/submit_results',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()),
   profile: (id)=>fetch(`/api/v1/student/${id}/profile`).then(r=>r.ok?r.json():null)
 }
 
+// ConfettiCanvas: lightweight celebratory animation used after achievements
 function ConfettiCanvas(){
   const ref = useRef(null);
   useEffect(()=>{
@@ -18,87 +23,122 @@ function ConfettiCanvas(){
     const particles = [];
     function emit(){ for(let i=0;i<60;i++){ particles.push({x:Math.random()*canvas.width,y:-10, vx:(Math.random()-0.5)*6, vy:Math.random()*4+2, life:Math.random()*60+60, color:['#f59e0b','#ef4444','#10b981','#3b82f6'][Math.floor(Math.random()*4)]}) } }
     function tick(){ ctx.clearRect(0,0,canvas.width,canvas.height); for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.life--; ctx.fillStyle=p.color; ctx.fillRect(p.x,p.y,6,8); if(p.life<=0||p.y>canvas.height+20) particles.splice(i,1) } if(running) requestAnimationFrame(tick) }
-    emit(); tick(); setTimeout(()=>{running=false; window.removeEventListener('resize', resize)},4000);
+    emit(); tick(); const t = setTimeout(()=>{running=false; window.removeEventListener('resize', resize)},4000);
+    return ()=>{ running=false; clearTimeout(t); window.removeEventListener('resize', resize) }
   },[]);
   return h('canvas',{ref:ref,class:'confetti-canvas'});
 }
 
+function Button(props){
+  const disabled = props.disabled ? {opacity:0.6,cursor:'not-allowed'} : {}
+  return h('button',Object.assign({class:'btn',style:disabled,disabled:props.disabled, onClick:props.onClick},{}),props.children)
+}
+
+function Login({onLogin}){
+  const [username,setUsername]=useState('')
+  const [password,setPassword]=useState('')
+  const [email,setEmail]=useState('')
+  const [mode,setMode]=useState('login')
+  const [error,setError]=useState('')
+  const [loading,setLoading]=useState(false)
+
+  async function submit(){
+    setError('')
+    if(!username) { setError('Please enter a username'); return }
+    if(!password) { setError('Please enter a password'); return }
+    setLoading(true)
+    try{
+      if(mode==='register'){
+        const r = await api.register({username,password,email})
+        if(r.ok) { alert('Registered, please login'); setMode('login'); setPassword('') }
+        else setError('Registration failed (user may already exist)')
+      } else {
+        const r = await api.login({username,password})
+        if(r.ok) { localStorage.setItem('sc_username', username); onLogin(username) }
+        else setError('Login failed: invalid credentials')
+      }
+    }catch(e){ setError('Network error') }
+    setLoading(false)
+  }
+
+  return h('div',{class:'card'},
+    h('h2',null,'Welcome to Study Coach'),
+    error ? h('div',{style:{color:'crimson',marginBottom:8}}, error) : null,
+    h('div',null, h('label',null,'Username'), h('input',{value:username,onInput:e=>setUsername(e.target.value)})),
+    h('div',null, h('label',null,'Password'), h('input',{type:'password',value:password,onInput:e=>setPassword(e.target.value)})),
+    mode==='register' ? h('div',null, h('label',null,'Email'), h('input',{type:'email',value:email,onInput:e=>setEmail(e.target.value)})) : null,
+    h('div',{style:{marginTop:8}},
+      h('button',{onClick:()=>setMode(mode==='login'?'register':'login')}, mode==='login'?'Register':'Back to Login'), ' ',
+      h(Button,{onClick:submit,disabled:loading}, mode==='login'?(loading?'Logging in...':'Login'):(loading?'Registering...':'Create Account'))
+    )
+  )
+}
+
+function Dashboard({onStart}){
+  const [me,setMe]=useState(null)
+  const [error,setError]=useState('')
+  useEffect(()=>{ api.me().then(u=>{ if(u) setMe(u); else setError('Not authenticated') }).catch(()=>setError('Failed to load profile')) },[])
+    return h('div',{},
+    h('div',{class:'card'}, h('h2',null,'Dashboard'), me ? h('div',null, h('div',null,'User: '+me.username), h('div',null,'Level: '+(me.student_level||'not set')), h('div',null, h(Button,{onClick:onStart},'Start New Session')) ) : h('div',null, error || 'Loading...')),
+    h('div',{style:{height:12}})
+  )
+}
+
+function CreateSession({onCreated}){
+  const [tasksText,setTasksText]=useState('')
+  const [subject,setSubject]=useState('math')
+  const [image,setImage]=useState(null)
+  const [ocrRunning,setOcrRunning]=useState(false)
+  const [error,setError]=useState('')
+
+  function onFile(e){ const f=e.target.files[0]; if(!f) return; setError(''); if(f.type.startsWith('image/')) { setImage(f); runOcr(f) } else { const r=new FileReader(); r.onload=()=>setTasksText(r.result.split('\n').slice(0,20).join('\n')); r.readAsText(f)} }
+
+  async function runOcr(file){ setOcrRunning(true); setError(''); try{ const { createWorker } = Tesseract; const worker = createWorker({logger:m=>console.log(m)}); await worker.load(); await worker.loadLanguage('eng'); await worker.initialize('eng'); const { data } = await worker.recognize(file); await worker.terminate(); setTasksText(data.text || ''); } catch(e){ setError('OCR failed'); } finally{ setOcrRunning(false) } }
+
+  async function submit(){ setError(''); if(!subject) { setError('Please enter a subject'); return } const tasks = tasksText.split('\n').filter(Boolean).map((t,i)=>({id:String(i+1),prompt:t})); if(tasks.length===0){ setError('Please provide at least one task'); return } try{ const sess = await api.createSession({student_id:localStorage.getItem('sc_username')||'demo',student_level:'grade10',subject,tasks}); onCreated(sess) } catch(e){ setError('Failed to create session') } }
+
+  return h('div',{class:'card'}, h('h2',null,'Create Session'), error ? h('div',{style:{color:'crimson'}},error) : null, h('div',null,'Subject: ', h('input',{value:subject,onInput:e=>setSubject(e.target.value)})), h('div',null,'Paste or upload tasks:'), h('textarea',{style:{width:'100%',height:140},value:tasksText,onInput:e=>setTasksText(e.target.value)}), h('div',null, h('input',{type:'file',onChange:onFile}), ocrRunning? h('div',null,'OCR running...'):null), h('div',{style:{marginTop:8}}, h(Button,{onClick:submit},'Create Session')) )
+}
+
+function SessionPlayer({session,onDone}){
+  const [idx,setIdx]=useState(0)
+  const [elapsed,setElapsed]=useState(0)
+  const [running,setRunning]=useState(false)
+  useEffect(()=>{ let t; if(running) t=setInterval(()=>setElapsed(e=>e+1),1000); return ()=>clearInterval(t) },[running])
+  function start(){ setElapsed(0); setRunning(true) }
+  function next(){ if(!session) return; session.tasks[idx].actual_seconds = elapsed; setElapsed(0); if(idx+1>=session.tasks.length){ setRunning(false); onDone(session) } else { setIdx(idx+1) } }
+  const current = session.tasks[idx] || {estimated_secs:0,prompt:'(none)'}
+  const remaining = Math.max(0, (current.estimated_secs || 0) - elapsed)
+  return h('div',{class:'card'}, h('h2',null,'Session Player'), h('div',null,'Task: ', current.prompt), h('div',{class:'taskLarge'}, 'Remaining: '+remaining+'s'), h('div',{style:{marginTop:8}}, h(Button,{onClick:start,disabled:running||remaining===0},'Start'), ' ', h(Button,{onClick:next},'Done/Next')) )
+}
+
+function StudyPlan({plan, onClose}){
+  if(!plan) return null;
+  return h('div',{class:'card'},
+    h('h2',null,'Study Plan'),
+    h('div',null, plan.subject ? h('div',null,'Subject: '+plan.subject) : null),
+    h('div',null, h('h3',null,'Focus areas:')),
+    h('ul',null, Object.keys(plan.focus || {}).map(k=> h('li',null, h('strong',null,k), ': ', plan.focus[k]))),
+    plan.next_timers && plan.next_timers.length ? h('div',null, h('h3',null,'Suggested timers (per task):'), h('ol',null, plan.next_timers.map((t,i)=> h('li',null, 'Task '+(i+1)+': '+t+'s')))) : null,
+    h('div',{style:{marginTop:8}}, h(Button,{onClick:onClose},'Back to Dashboard'))
+  )
+}
+
 function App(){
-  const [studentID,setStudentID] = useState('demo_anna')
-  const [tasksText,setTasksText] = useState('5+7\n12*3\nintegrate x^2')
-  const [session,setSession] = useState(null)
-  const [currentIdx,setCurrentIdx] = useState(0)
-  const [running,setRunning] = useState(false)
-  const [elapsed,setElapsed] = useState(0)
-  const timerRef = useRef(null)
-  const [profile,setProfile] = useState(null)
-  const [mockScenarios,setMockScenarios] = useState([])
-
-  const [username,setUsername]=useState(localStorage.getItem('sc_username')||'');
-  const [password,setPassword]=useState('');
-  const [email,setEmail]=useState(localStorage.getItem('sc_email')||'');
-
-  useEffect(()=>{
-    fetch('/ui/mock_tests.json').then(r=>r.json()).then(setMockScenarios)
-    fetch('/ui/demo_students.json').then(r=>r.json()).then(ds=>{ const d = ds.find(x=>x.student_id===studentID); if(d) setProfile(d) })
-  },[])
-
-  useEffect(()=>{
-    if(running){ timerRef.current = setInterval(()=> setElapsed(e=>e+1),1000) }
-    else { clearInterval(timerRef.current); timerRef.current=null }
-    return ()=>clearInterval(timerRef.current)
-  },[running])
-
-  function loadMockScenario(i){ const s = mockScenarios[i]; if(!s) return; setTasksText(s.tasks.join('\n')) }
-  function loadDemoStudent(i){ fetch('/ui/demo_students.json').then(r=>r.json()).then(ds=>{ setProfile(ds[i]); setStudentID(ds[i].student_id) }) }
-
-  async function createSession(){ const tasks = tasksText.split('\n').filter(Boolean).map((t,i)=>({id:String(i+1),prompt:t})); const sess = await api.createSession({student_id:studentID,student_level:'grade10',subject:'math',tasks}); setSession(sess); setCurrentIdx(0); setElapsed(0); setRunning(false) }
-
-  function startSequence(){ if(!session) return; setCurrentIdx(0); setElapsed(0); setRunning(true) }
-  function doneTask(){ if(session && session.tasks[currentIdx]){ session.tasks[currentIdx].actual_seconds = elapsed } setElapsed(0); if(currentIdx+1 >= session.tasks.length){ setRunning(false); promptSubmit() } else { setCurrentIdx(currentIdx+1); setElapsed(0); } }
-
-  async function promptSubmit(){ if(confirm('Submit your answers now?')){ const results = session.tasks.map(t=>({actual_seconds:t.actual_seconds||t.estimated_secs, correct: Math.random()>0.4})); await api.submitResults({session_id:session.id, results}); alert('Study plan generated'); api.profile(studentID).then(setProfile) }}
-
-  function uploadFile(e){ const f = e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = ()=> setTasksText(reader.result.split('\n').slice(0,20).join('\n')); reader.readAsText(f) }
-  function uploadImage(e){ alert('image upload demo: image received (not processed in demo)') }
-
-  function login(){ localStorage.setItem('sc_username', username); localStorage.setItem('sc_email', email); if(username) setStudentID(username); api.profile(username).then(p=>{ if(p) setProfile(p); else setProfile({student_id: username, points: 0, streak: 0, earned_badges: [], weekly_recap: []}); }).catch(()=>{ setProfile({student_id: username, points: 0, streak: 0, earned_badges: [], weekly_recap: []}) }) }
-
+  const [view,setView]=useState('login')
+  const [session,setSession]=useState(null)
+  const [plan,setPlan]=useState(null)
+  useEffect(()=>{ const username = localStorage.getItem('sc_username'); if(username) api.me().then(u=>{ if(u) setView('dashboard') }) },[])
+  function handleLogin(username){ localStorage.setItem('sc_username', username); setView('dashboard') }
   return h('div',{},
-    h('div',{style:{display:'flex',gap:12}},
-      h('div',{style:{flex:'1 1 320px'}},
-         h('div',{class:'card'},
-           h('h3',null,'Account / Create Session'),
-           h('div',null,
-             h('div',null,'Username: ', h('input',{placeholder:'Username',value:username,onInput:e=>setUsername(e.target.value)})),
-             h('div',null,'Password: ', h('input',{type:'password',value:password,onInput:e=>setPassword(e.target.value)})),
-             h('div',null,'Email (optional): ', h('input',{placeholder:'email@example.com',value:email,onInput:e=>setEmail(e.target.value)})),
-             h('div',null, h('button',{onClick:login},'Login / Save locally'))
-           ),
-
-           h('hr',null),
-
-           h('div',null,'Student ID: ', h('input',{value:studentID,onInput:e=>setStudentID(e.target.value)})),
-           h('div',null,'Tasks:'),
-           h('textarea',{style:{width:'100%',height:120},value:tasksText,onInput:e=>setTasksText(e.target.value)}),
-           h('div',{class:'uploader'},
-             h('label',{class:'card',style:{padding:8,cursor:'pointer'}}, h('div',null,'Upload File'), h('input',{type:'file',onChange:uploadFile,style:{display:'none'}})),
-             h('label',{class:'card',style:{padding:8,cursor:'pointer'}}, h('div',null,'Upload Image'), h('input',{type:'file',accept:'image/*',onChange:uploadImage,style:{display:'none'}})),
-             h('button',{onClick:()=>{ navigator.clipboard.readText().then(t=>setTasksText(t)).catch(()=>alert('Paste not available')) }},'Paste Text')
-           ),
-           h('div',{style:{marginTop:8}}, h('button',{onClick:createSession},'Create Session'), ' ', h('button',{onClick:()=>loadMockScenario(0)},'Load Quick Math'), ' ', h('button',{onClick:()=>loadMockScenario(1)},'Load Reading'))
-         )
-      ),
-      h('div',{style:{flex:2}},
-        h('div',{class:'card'},
-          h('h3',null,'Session Player'),
-          session ? h('div',null, h('div',null,'Session: ', session.id), h('div',null, 'Current task: ', (session.tasks[currentIdx]||{}).prompt || 'none'), h('div',{class:'taskLarge'}, elapsed+'s elapsed'), h('div',null, h('button',{onClick:doneTask},'Done'), ' ', h('button',{onClick:startSequence},'Start Sequential')) ) : h('div',null,'No session yet')
-        ),
-        h('div',{style:{height:12}}),
-        h('div',{class:'card'}, h('h3',null,'Demo Students'), h('div',null, h('button',{onClick:()=>loadDemoStudent(0)},'Load Anna'), ' ', h('button',{onClick:()=>loadDemoStudent(1)},'Load Ben')))
-      )
-    ),
-    h('div',{style:{marginTop:12}}, profile ? h('div',{class:'card'}, h('h3',null,'Profile'), h('div',null,'ID: ', profile.student_id), h('div',null,'Points: ', profile.points), h('div',null,'Streak: ', profile.streak), h('div',null, 'Badges: ', profile.earned_badges.map(b=>b.name).join(', ')), h('div',null,'Recap: ', profile.weekly_recap.map(r=>r.topic+':'+r.improved_by).join(', ')) ) : null ),
+    view==='login' ? h(Login,{onLogin:handleLogin}) : null,
+    view==='dashboard' ? h(Dashboard,{onStart:()=>setView('create')}) : null,
+    view==='create' ? h(CreateSession,{onCreated:(s)=>{ setSession(s); setView('player') }}) : null,
+    view==='player' && session ? h(SessionPlayer,{session,onDone:(s)=>{
+        // submit results and show generated study plan returned by server
+        api.submitResults({session_id:s.id, results:s.tasks.map(t=>({actual_seconds:t.actual_seconds||t.estimated_secs, correct:true}))}).then((pl)=>{ setPlan(pl); setView('plan') }).catch(()=>setView('dashboard'))
+    }}) : null,
+    view==='plan' && plan ? h(StudyPlan,{plan,onClose:()=>{ setPlan(null); setView('dashboard') }}) : null,
     h(ConfettiCanvas)
   )
 }

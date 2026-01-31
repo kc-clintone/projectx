@@ -112,6 +112,28 @@ func createSessionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate each task to ensure it's academically aligned using AI when available,
+	// with a heuristic fallback. If any task is non-academic, reject the request.
+	for _, t := range req.Tasks {
+		prompt := fmt.Sprintf("Classify the following student task as 'academic' or 'non-academic'. Reply with a single word.\n\nTask: %s", t.Prompt)
+		isAcademic := false
+		if resp, err := ai.QueryGemini(prompt); err == nil {
+			if strings.Contains(strings.ToLower(resp), "academic") {
+				isAcademic = true
+			}
+		}
+		// fallback to heuristic
+		if !isAcademic {
+			if coach.IsLikelyAcademicTask(t.Prompt) {
+				isAcademic = true
+			}
+		}
+		if !isAcademic {
+			http.Error(w, "task not academic: "+t.Prompt, http.StatusBadRequest)
+			return
+		}
+	}
+
 	sess := coach.NewSession(req.StudentID, req.StudentLevel, req.Subject, req.Tasks)
 
 	if err := storage.SaveSession(sess); err != nil {

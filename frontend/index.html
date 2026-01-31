@@ -6,14 +6,16 @@
   <title>Study Coach - UI</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/ui/styles.css">
-  <!-- Preact (global) -->
+  <!-- Preact (global UMD) -->
   <script src="https://unpkg.com/preact@10.16.0/dist/preact.min.js"></script>
   <script src="https://unpkg.com/preact@10.16.0/hooks/dist/hooks.umd.js"></script>
   <script>window.preactHooks = preactHooks;</script>
+  <!-- Tesseract.js for client-side OCR -->
+  <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 </head>
 <body>
   <div id="root" class="app"></div>
   <canvas id="confetti-canvas" class="confetti-canvas" aria-hidden="true"></canvas>
-  <script src="/ui/app.js" type="module"></script>
+  <script src="app.js"></script>
 </body>
 </html>

@@ -221,3 +221,28 @@ func GetBadgeByName(name string) (model.Badge, bool) {
 	b, ok := BadgeCatalog[name]
 	return b, ok
 }
+
+// IsLikelyAcademicTask applies simple heuristics to determine whether a free-text
+// student task looks like an academic problem (used as a fallback when AI is disabled).
+func IsLikelyAcademicTask(text string) bool {
+	s := strings.ToLower(strings.TrimSpace(text))
+	if len(s) < 5 {
+		return false
+	}
+	// common academic action verbs and phrases
+	keywords := []string{"solve", "calculate", "prove", "derive", "explain", "define", "compare", "evaluate", "what is", "find", "show that", "compute", "simplify", "integrate", "differentiate", "diagram", "describe", "why", "how"}
+	for _, k := range keywords {
+		if strings.Contains(s, k) {
+			return true
+		}
+	}
+	// presence of numbers, math symbols or question mark often indicates an academic prompt
+	if strings.ContainsAny(s, "0123456789=+-*/^()") || strings.Contains(s, "?") {
+		return true
+	}
+	// longer descriptive prompts are more likely academic
+	if len(s) > 60 {
+		return true
+	}
+	return false
+}
