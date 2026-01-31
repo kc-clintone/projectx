@@ -4,6 +4,8 @@ go 1.21
 
 require (
 	github.com/google/generative-ai-go v0.19.0
+	github.com/mattn/go-sqlite3 v1.14.33
+	golang.org/x/crypto v0.24.0
 	google.golang.org/api v0.186.0
 )
 
@@ -29,7 +31,6 @@ require (
 	go.opentelemetry.io/otel v1.26.0 // indirect
 	go.opentelemetry.io/otel/metric v1.26.0 // indirect
 	go.opentelemetry.io/otel/trace v1.26.0 // indirect
-	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
