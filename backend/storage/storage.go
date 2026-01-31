@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kc-clintone/study-coach/model"
 )
@@ -122,6 +123,14 @@ func ErrNotFound() error { return errors.New("not found") }
 func SaveProfile(studentID string, profile *model.ProfileResponse) error {
 	if err := ensureDir(); err != nil {
 		return err
+	}
+	// ensure RecentAchievements is populated for any string achievements
+	if profile.RecentAchievements == nil {
+		var recs []model.AchievementRecord
+		for _, a := range profile.Achievements {
+			recs = append(recs, model.AchievementRecord{Name: a, EarnedAt: time.Now()})
+		}
+		profile.RecentAchievements = recs
 	}
 	b, _ := json.MarshalIndent(profile, "", "  ")
 	path := filepath.Join(storageDir, studentID+".profile.json")

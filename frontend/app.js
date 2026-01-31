@@ -74,6 +74,10 @@ function Login({onLogin}){
   )
 }
 
+function formatDate(ts){ try{ const d = new Date(ts); return d.toLocaleString() }catch(e){ return ts }
+}
+
+// update Dashboard rendering to include timeline if present
 function Dashboard({onStart, onNewAchievements}){
   const [me,setMe]=useState(null)
   const [error,setError]=useState('')
@@ -113,11 +117,15 @@ function Dashboard({onStart, onNewAchievements}){
       h('div',null, h(Button,{onClick:onStart},'Start New Session')),
       h('div',{style:{marginTop:12}},
         h('h3',null,'Achievements'),
-        (me.profile && me.profile.achievements && me.profile.achievements.length) ? h('ul',null, me.profile.achievements.map(a=> h('li',null,a))) : h('div',null,'No achievements yet')
+        (me.profile && me.profile.achievements && me.profile.achievements.length) ? h('ul',{class:'achievements-list'}, me.profile.achievements.map(a=> h('li',null,a))) : h('div',null,'No achievements yet')
       ),
       h('div',{style:{marginTop:12}},
         h('h3',null,'Badges'),
-        (me.profile && me.profile.earned_badges && me.profile.earned_badges.length) ? h('div',null, me.profile.earned_badges.map(b=> h('span',{class:'badge',style:{background:b.color,display:'inline-block',padding:'6px',marginRight:6,borderRadius:6}}, b.icon+' '+b.name))) : h('div',null,'No badges yet')
+        (me.profile && me.profile.earned_badges && me.profile.earned_badges.length) ? h('div',{class:'badges-row'}, me.profile.earned_badges.map(b=> h('div',{class:'badge-chip',style:{background:b.color}}, h('span',{class:'icon'}, b.icon), h('span',null,b.name)))) : h('div',null,'No badges yet')
+      ),
+      h('div',{style:{marginTop:12}},
+        h('h3',null,'Recent Achievements'),
+        (me.profile && me.profile.recent_achievements && me.profile.recent_achievements.length) ? h('ul',null, me.profile.recent_achievements.map(r=> h('li',null, h('strong',null,r.name), ' — ', formatDate(r.earned_at)))) : h('div',null,'No recent achievements')
       )
     ) : h('div',null, error || 'Loading...')),
     h('div',{style:{height:12}})
@@ -137,7 +145,15 @@ function CreateSession({onCreated}){
 
   async function submit(){ setError(''); if(!subject) { setError('Please enter a subject'); return } const tasks = tasksText.split('\n').filter(Boolean).map((t,i)=>({id:String(i+1),prompt:t})); if(tasks.length===0){ setError('Please provide at least one task'); return } try{ const sess = await api.createSession({student_id:localStorage.getItem('sc_username')||'demo',student_level:'grade10',subject,tasks}); onCreated(sess) } catch(e){ setError('Failed to create session') } }
 
-  return h('div',{class:'card'}, h('h2',null,'Create Session'), error ? h('div',{style:{color:'crimson'}},error) : null, h('div',null,'Subject: ', h('input',{value:subject,onInput:e=>setSubject(e.target.value)})), h('div',null,'Paste or upload tasks:'), h('textarea',{style:{width:'100%',height:140},value:tasksText,onInput=e=>setTasksText(e.target.value)}), h('div',null, h('input',{type:'file',onChange:onFile}), ocrRunning? h('div',null,'OCR running...'):null), h('div',{style:{marginTop:8}}, h(Button,{onClick:submit},'Create Session')) )
+  return h('div',{class:'card'},
+    h('h2',null,'Create Session'),
+    error ? h('div',{style:{color:'crimson'}},error) : null,
+    h('div',null,'Subject: ', h('input',{value:subject,onInput:e=>setSubject(e.target.value)})),
+    h('div',null,'Paste or upload tasks:'),
+    h('textarea',{style:{width:'100%',height:140},value:tasksText,onInput:e=>setTasksText(e.target.value)}),
+    h('div',null, h('input',{type:'file',onChange:onFile}), ocrRunning? h('div',null,'OCR running...'):null),
+    h('div',{style:{marginTop:8}}, h(Button,{onClick:submit},'Create Session'))
+  )
 }
 
 function SessionPlayer({session,onDone}){
