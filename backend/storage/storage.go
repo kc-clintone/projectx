@@ -21,6 +21,12 @@ func ensureDir() error {
 	return os.MkdirAll(storageDir, 0o755)
 }
 
+// EnsureDir is an exported wrapper that guarantees the storage directory exists.
+func EnsureDir() error { return ensureDir() }
+
+// GetStorageDir returns the configured storage directory path.
+func GetStorageDir() string { return storageDir }
+
 // SaveSession persists a session to the file system
 func SaveSession(s *model.Session) error {
 	if err := ensureDir(); err != nil {
