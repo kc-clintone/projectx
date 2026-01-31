@@ -85,24 +85,20 @@ function Dashboard({onStart, onNewAchievements}){
     api.me().then(u=>{
       if(u) {
         setMe(u)
-        // determine achievements list from response (profile may be nested)
         const achievements = (u.profile && u.profile.achievements) || u.achievements || []
         const key = 'sc_achievements_'+(u.username||'guest')
         const storedRaw = localStorage.getItem(key)
         if(storedRaw === null) {
-          // first time seeing achievements for this user; initialize but don't fire confetti
           try{ localStorage.setItem(key, JSON.stringify(achievements || [])) } catch(e){}
         } else {
           try{
             const stored = JSON.parse(storedRaw || '[]')
             const newOnes = (achievements || []).filter(a=>stored.indexOf(a) === -1)
             if(newOnes.length>0) {
-              // notify parent that there are new achievements
               if(typeof onNewAchievements === 'function') onNewAchievements(newOnes)
-              // update stored list
               localStorage.setItem(key, JSON.stringify(Array.from(new Set([].concat(stored, achievements || [])))))
             }
-          } catch(e) { /* ignore parse errors */ }
+          } catch(e) { }
         }
       } else {
         setError('Not authenticated')
@@ -110,25 +106,49 @@ function Dashboard({onStart, onNewAchievements}){
     }).catch(()=>setError('Failed to load profile'))
   },[])
 
-  return h('div',{},
-    h('div',{class:'card'}, h('h2',null,'Dashboard'), me ? h('div',null,
-      h('div',null,'User: '+me.username),
-      h('div',null,'Level: '+(me.student_level||'not set')),
-      h('div',null, h(Button,{onClick:onStart},'Start New Session')),
-      h('div',{style:{marginTop:12}},
-        h('h3',null,'Achievements'),
-        (me.profile && me.profile.achievements && me.profile.achievements.length) ? h('ul',{class:'achievements-list'}, me.profile.achievements.map(a=> h('li',null,a))) : h('div',null,'No achievements yet')
-      ),
-      h('div',{style:{marginTop:12}},
-        h('h3',null,'Badges'),
-        (me.profile && me.profile.earned_badges && me.profile.earned_badges.length) ? h('div',{class:'badges-row'}, me.profile.earned_badges.map(b=> h('div',{class:'badge-chip',style:{background:b.color}}, h('span',{class:'icon'}, b.icon), h('span',null,b.name)))) : h('div',null,'No badges yet')
-      ),
-      h('div',{style:{marginTop:12}},
-        h('h3',null,'Recent Achievements'),
-        (me.profile && me.profile.recent_achievements && me.profile.recent_achievements.length) ? h('ul',null, me.profile.recent_achievements.map(r=> h('li',null, h('strong',null,r.name), ' — ', formatDate(r.earned_at)))) : h('div',null,'No recent achievements')
+  // helper renderers
+  function Avatar({name}){
+    const initials = (name||'').split(' ').map(s=>s[0]||'').join('').slice(0,2).toUpperCase()
+    return h('div',{class:'avatar'}, initials)
+  }
+
+  function Stat({label,value}){
+    return h('div',{class:'stat'}, h('div',{class:'stat-value'}, value), h('div',{class:'stat-label'}, label))
+  }
+
+  if(!me) return h('div',{class:'card'}, error || 'Loading...')
+
+  const profile = me.profile || {}
+  const achievements = profile.achievements || []
+  const badges = profile.earned_badges || []
+  const recent = profile.recent_achievements || []
+
+  return h('div',{class:'dashboard app'},
+    h('div',{class:'left column'},
+      h('div',{class:'profile-card card'},
+        h(Avatar,{name:me.username}),
+        h('h2',null, me.username),
+        h('div',{class:'muted'}, me.email || ''),
+        h('div',{style:{height:8}}),
+        h('div',{class:'stats-row'}, h(Stat,{label:'Points',value:profile.points||0}), h(Stat,{label:'Streak',value:profile.streak||0}), h(Stat,{label:'Badges',value:badges.length||0})),
+        h('div',{style:{height:8}}),
+        h('div',null, h('h4',null,'Badges')),
+        h('div',{class:'badges-row'}, badges.map(b=> h('div',{class:'badge-chip',style:{background:b.color}}, h('span',{class:'icon'}, b.icon), h('span',null,b.name)))),
+        h('div',{style:{height:12}}),
+        h('div',null, h('h4',null,'Achievements')),
+        h('ul',{class:'achievements-list'}, achievements.map(a=> h('li',null,a))),
+        h('div',{style:{height:12}}),
+        h(Button,{onClick:onStart}, 'Start New Session')
       )
-    ) : h('div',null, error || 'Loading...')),
-    h('div',{style:{height:12}})
+    ),
+    h('div',{class:'right column'},
+      h('div',{class:'card'}, h('h3',null,'Recent Activities'),
+        recent.length ? h('ul',{class:'activity-list'}, recent.map(r=> h('li',null, h('div',{class:'activity-title'}, r.name), h('div',{class:'activity-time muted'}, formatDate(r.earned_at))))) : h('div',null,'No recent activity')
+      ),
+      h('div',{style:{height:12}}),
+      h('div',{class:'card'}, h('h3',null,'Latest Study Plan'), profile && profile.last_plan ? h('div',null, h('div',null,'Subject: '+(profile.last_plan.subject||'—')), h('div',null, h('h4',null,'Focus:')), h('ul',null, Object.keys(profile.last_plan.focus||{}).map(k=> h('li',null, h('strong',null,k), ': ', profile.last_plan.focus[k])))) : h('div',null,'No study plan yet')
+      )
+    )
   )
 }
 
@@ -150,7 +170,7 @@ function CreateSession({onCreated}){
     error ? h('div',{style:{color:'crimson'}},error) : null,
     h('div',null,'Subject: ', h('input',{value:subject,onInput:e=>setSubject(e.target.value)})),
     h('div',null,'Paste or upload tasks:'),
-    h('textarea',{style:{width:'100%',height:140},value:tasksText,onInput:e=>setTasksText(e.target.value)}),
+    h('textarea',{style:{width:'100%',height:140},value:tasksText,onInput:(e)=>setTasksText(e.target.value)}),
     h('div',null, h('input',{type:'file',onChange:onFile}), ocrRunning? h('div',null,'OCR running...'):null),
     h('div',{style:{marginTop:8}}, h(Button,{onClick:submit},'Create Session'))
   )
