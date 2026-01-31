@@ -234,6 +234,13 @@ const app = {
                         <div class="text-indigo-100 text-xs">Launch a quiz or study plan</div>
                     </div>
                 </div>
+                
+                <div class="flex justify-end">
+                    <button onclick="app.renderSettings()" class="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-lg transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        Edit Profile
+                    </button>
+                </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <!-- Recommendations -->
@@ -281,6 +288,62 @@ const app = {
                         </div>
                     </div>
                 </div>
+            </div>
+        `;
+    },
+
+    renderSettings() {
+        const container = document.getElementById('app-container');
+        // We don't have the profile object locally in state except name, but we can fetch or just let user overwrite
+        // For simplicity, we render empty fields or current name
+        const currentName = document.getElementById('user-name').textContent.replace('Hi, ', '');
+        
+        container.innerHTML = `
+            <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-8 border border-slate-100 fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Profile Settings</h2>
+                    <button onclick="app.loadDashboard()" class="text-slate-400 hover:text-slate-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <form onsubmit="app.handleSettingsSubmit(event)" class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-slate-700">Display Name</label>
+                        <input name="name" value="${currentName}" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-slate-700">Grade Level</label>
+                        <select name="grade" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="">Unchanged</option>
+                            <option value="Elementary">Elementary School</option>
+                            <option value="Middle">Middle School</option>
+                            <option value="High">High School</option>
+                            <option value="University">University / College</option>
+                            <option value="Professional">Professional Certification</option>
+                            <option value="Lifelong Learner">Lifelong Learner</option>
+                        </select>
+                    </div>
+                    
+                    <div class="pt-6 border-t border-slate-100 space-y-4">
+                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Change Password</h3>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700">Current Password</label>
+                            <input type="password" name="currentPassword" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700">New Password</label>
+                            <input type="password" name="newPassword" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <p class="text-xs text-slate-400 italic">Leave password fields blank if you only want to update profile info.</p>
+                    </div>
+
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="app.loadDashboard()" class="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">Cancel</button>
+                        <button type="submit" class="flex-[2] py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-colors">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
             </div>
         `;
     },
@@ -806,6 +869,23 @@ const app = {
             this.loadDashboard();
         } catch (err) {
             alert("Guest setup failed: " + err.message);
+        } finally {
+            this.setLoading(false);
+        }
+    },
+
+    async handleSettingsSubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        this.setLoading(true, "Updating Profile...");
+        try {
+            await this.apiCall('/api/profile', data);
+            alert("Profile updated successfully!");
+            this.loadDashboard();
+        } catch (err) {
+            alert("Update failed: " + err.message);
         } finally {
             this.setLoading(false);
         }
