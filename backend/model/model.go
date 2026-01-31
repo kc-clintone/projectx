@@ -82,14 +82,14 @@ type AchievementRecord struct {
 
 // ProfileResponse returned by the student profile endpoint
 type ProfileResponse struct {
-	StudentID    string             `json:"student_id"`
-	Topics       map[string]int     `json:"topics"`
-	Achievements []string           `json:"achievements"`
+	StudentID          string              `json:"student_id"`
+	Topics             map[string]int      `json:"topics"`
+	Achievements       []string            `json:"achievements"`
 	RecentAchievements []AchievementRecord `json:"recent_achievements,omitempty"`
-	EarnedBadges []Badge            `json:"earned_badges"`
-	Points       int                `json:"points"`
-	Progress     map[string]int     `json:"progress_percent"`
-	WeeklyRecap  []TopicImprovement `json:"weekly_recap"`
+	EarnedBadges       []Badge             `json:"earned_badges"`
+	Points             int                 `json:"points"`
+	Progress           map[string]int      `json:"progress_percent"`
+	WeeklyRecap        []TopicImprovement  `json:"weekly_recap"`
 	// new fields for gamification
 	Streak     int       `json:"streak"`
 	LastActive time.Time `json:"last_active,omitempty"`
