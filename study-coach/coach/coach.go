@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kc-clintone/study-coach/pkg/ai"
-	"github.com/kc-clintone/study-coach/pkg/model"
-	"github.com/kc-clintone/study-coach/pkg/storage"
+	"github.com/kc-clintone/study-coach/ai"
+	"github.com/kc-clintone/study-coach/model"
+	"github.com/kc-clintone/study-coach/storage"
 )
 
 // IsEducationalSubject returns true for supported subject keywords.

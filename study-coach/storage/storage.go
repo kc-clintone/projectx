@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/kc-clintone/study-coach/pkg/model"
+	"github.com/kc-clintone/study-coach/model"
 )
 
 var (

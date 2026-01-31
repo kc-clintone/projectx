@@ -9,10 +9,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/kc-clintone/study-coach/pkg/ai"
-	"github.com/kc-clintone/study-coach/pkg/coach"
-	"github.com/kc-clintone/study-coach/pkg/model"
-	"github.com/kc-clintone/study-coach/pkg/storage"
+	"github.com/kc-clintone/study-coach/ai"
+	"github.com/kc-clintone/study-coach/coach"
+	"github.com/kc-clintone/study-coach/model"
+	"github.com/kc-clintone/study-coach/storage"
 )
 
 // createSessionHandler accepts student info and a list of tasks and returns a session with timers

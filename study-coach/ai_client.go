@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kc-clintone/study-coach/pkg/ai"
+	"github.com/kc-clintone/study-coach/ai"
 )
 
 // QueryGemini delegates to pkg/ai.QueryGemini.
