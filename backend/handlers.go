@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -180,23 +181,46 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 	// Try to generate a study plan via AI; fall back to heuristic generator
 	var plan *model.StudyPlan
 	aiPrompt := buildPlanPrompt(sess)
-	if aiResp, err := ai.QueryGemini(aiPrompt); err == nil {
-		// attempt to parse JSON response into StudyPlan
-		var aiPlan model.StudyPlan
-		if json.Unmarshal([]byte(aiResp), &aiPlan) == nil {
-			// ensure required fields
-			if aiPlan.StudentID == "" {
-				aiPlan.StudentID = sess.StudentID
+	aiResp, _ := ai.QueryGemini(aiPrompt)
+	if strings.TrimSpace(aiResp) != "" {
+		// try to extract a JSON object from the LLM output (supports ```json blocks or plain JSON)
+		if jsonStr, ok := extractJSONFromString(aiResp); ok {
+			var aiPlan model.StudyPlan
+			if json.Unmarshal([]byte(jsonStr), &aiPlan) == nil {
+				if aiPlan.StudentID == "" {
+					aiPlan.StudentID = sess.StudentID
+				}
+				if aiPlan.Subject == "" {
+					aiPlan.Subject = sess.Subject
+				}
+				if aiPlan.CreatedAt.IsZero() {
+					aiPlan.CreatedAt = time.Now()
+				}
+				// ensure focus and timers populated
+				if len(aiPlan.Focus) == 0 {
+					aiPlan.Focus = parseFocusFromText(aiResp)
+				}
+				if len(aiPlan.NextTimers) == 0 {
+					for _, t := range sess.Tasks {
+						aiPlan.NextTimers = append(aiPlan.NextTimers, t.EstimatedSecs)
+					}
+				}
+				plan = &aiPlan
 			}
-			if aiPlan.Subject == "" {
-				aiPlan.Subject = sess.Subject
-			}
-			if aiPlan.CreatedAt.IsZero() {
-				aiPlan.CreatedAt = time.Now()
-			}
-			plan = &aiPlan
 		}
 	}
+
+	// If AI didn't produce a structured plan, try to salvage simple focus lines from AI text
+	if plan == nil && strings.TrimSpace(aiResp) != "" {
+		if f := parseFocusFromText(aiResp); len(f) > 0 {
+			p := &model.StudyPlan{StudentID: sess.StudentID, Subject: sess.Subject, CreatedAt: time.Now(), Focus: f}
+			for _, t := range sess.Tasks {
+				p.NextTimers = append(p.NextTimers, t.EstimatedSecs)
+			}
+			plan = p
+		}
+	}
+
 	if plan == nil {
 		plan = coach.GenerateStudyPlan(sess)
 	}
@@ -404,13 +428,93 @@ func buildSummaryPrompt(sess *model.Session, plan *model.StudyPlan) string {
 // new helper to ask AI to produce a JSON study plan
 func buildPlanPrompt(sess *model.Session) string {
 	var b strings.Builder
-	b.WriteString("You are an educational assistant. Based on the student's recent session data, produce a JSON object matching the StudyPlan schema:\n")
-	b.WriteString("{\n  \"student_id\": \"...\",\n  \"subject\": \"...\",\n  \"created_at\": \"2024-01-02T15:04:05Z\",\n  \"focus\": { \"topic\": \"recommendation\" },\n  \"next_timers\": [60,120]\n}\n\n")
-	b.WriteString("Use the session information below (task prompt, estimated secs, actual secs, correctness) to prioritize focus areas and suggested next_timers. Return only the JSON object, nothing else.\n\n")
+	b.WriteString("You are an educational assistant. Based on the student's recent session data, produce a JSON object matching the StudyPlan schema exactly. Respond ONLY with the JSON.\n\n")
+	b.WriteString("Schema example:\n")
+	b.WriteString(`{"student_id":"<id>","subject":"<subject>","created_at":"2024-01-02T15:04:05Z","focus":{"algebra":"short recommendation"},"next_timers":[60,120]}` + "\n\n")
+	b.WriteString("If you cannot produce well-formed JSON, wrap the JSON in triple backticks with optional language hint (```json ... ```). Use topic keys as short strings and recommendations as concise single sentences.\n\n")
 	b.WriteString("Session data:\n")
 	for i, t := range sess.Tasks {
 		b.WriteString(fmt.Sprintf("%d. prompt: %s | est: %d | actual: %d | correct: %v\n", i+1, t.Prompt, t.EstimatedSecs, t.ActualSeconds, t.Correct != nil && *t.Correct))
 	}
 	b.WriteString(fmt.Sprintf("\nSubject: %s\nStudentID: %s\n", sess.Subject, sess.StudentID))
+	b.WriteString("Return only the JSON object. Do not include any explanatory text.\n")
 	return b.String()
+}
+
+// extractJSONFromString attempts to locate a JSON object inside a free-form string.
+func extractJSONFromString(s string) (string, bool) {
+	// first look for ```json ... ``` blocks
+	re := regexp.MustCompile("(?s)```json\\s*(\\{.*?\\})\\s*```")
+	if m := re.FindStringSubmatch(s); len(m) == 2 {
+		return m[1], true
+	}
+	// then look for ``` ... ``` blocks
+	re2 := regexp.MustCompile("(?s)```\\s*(\\{.*?\\})\\s*```")
+	if m := re2.FindStringSubmatch(s); len(m) == 2 {
+		return m[1], true
+	}
+	// otherwise find the first balanced JSON object by scanning braces (ignoring quoted braces)
+	start := strings.Index(s, "{")
+	if start == -1 {
+		return "", false
+	}
+	depth := 0
+	inString := false
+	escape := false
+	for i := start; i < len(s); i++ {
+		ch := s[i]
+		if ch == '\\' && !escape {
+			escape = true
+			continue
+		}
+		if ch == '"' && !escape {
+			inString = !inString
+		}
+		escape = false
+		if inString {
+			continue
+		}
+		if ch == '{' {
+			depth++
+		} else if ch == '}' {
+			depth--
+			if depth == 0 {
+				return s[start : i+1], true
+			}
+		}
+	}
+	return "", false
+}
+
+// parseFocusFromText looks for simple lines like "topic: recommendation" and returns a map.
+func parseFocusFromText(s string) map[string]string {
+	out := map[string]string{}
+	lines := strings.Split(s, "\n")
+	for _, ln := range lines {
+		ln = strings.TrimSpace(ln)
+		if ln == "" {
+			continue
+		}
+		// remove leading list markers
+		if strings.HasPrefix(ln, "- ") || strings.HasPrefix(ln, "* ") {
+			ln = strings.TrimSpace(ln[2:])
+		}
+		// split at first ':' or ' - '
+		if idx := strings.Index(ln, ":"); idx != -1 {
+			key := strings.TrimSpace(ln[:idx])
+			val := strings.TrimSpace(ln[idx+1:])
+			if key != "" && val != "" {
+				out[key] = val
+				continue
+			}
+		}
+		if idx := strings.Index(ln, " - "); idx != -1 {
+			key := strings.TrimSpace(ln[:idx])
+			val := strings.TrimSpace(ln[idx+3:])
+			if key != "" && val != "" {
+				out[key] = val
+			}
+		}
+	}
+	return out
 }
