@@ -27,7 +27,7 @@ jobs:
         working-directory: ./backend
         run: |
           export GEMINI_ENABLED=0
-          go test ./... -v
+          go test ./...
 
   test-frontend:
     name: Run frontend uvu tests
