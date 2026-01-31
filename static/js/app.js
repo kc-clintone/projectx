@@ -84,13 +84,14 @@ const app = {
 
     renderProfile() {
         const p = this.state.profile || {};
+        const isEditing = !!this.state.sessionId;
         const container = document.getElementById('app-container');
         container.innerHTML = `
             <div class="min-h-[60vh] flex items-center justify-center">
                 <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 max-w-xl w-full border border-slate-100 fade-in relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-violet-500"></div>
                     <div class="text-center mb-10">
-                        <h2 class="text-3xl font-black text-slate-900 mb-3">Complete Your Profile</h2>
+                        <h2 class="text-3xl font-black text-slate-900 mb-3">${isEditing ? 'Edit Profile' : 'Complete Your Profile'}</h2>
                         <p class="text-slate-500 font-medium">This helps us tailor the difficulty of your assessments.</p>
                     </div>
                     <form onsubmit="app.handleProfileSubmit(event)" class="space-y-8">
@@ -112,12 +113,18 @@ const app = {
                                 </select>
                             </div>
                         </div>
-                        <button type="submit" class="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
-                            <span>${p.name ? 'Update Profile' : 'Finish Setup'}</span>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                        </button>
+                        <div class="flex gap-3">
+                            ${isEditing ? `
+                            <button type="button" onclick="app.init()" class="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all">
+                                Cancel
+                            </button>` : ''}
+                            <button type="submit" class="flex-[2] py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+                                <span>${isEditing ? 'Save Changes' : 'Finish Setup'}</span>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -612,6 +619,22 @@ const app = {
         const formData = new FormData(e.target);
         const profile = { name: formData.get('name'), grade: formData.get('grade') };
         
+        // If session exists, update profile instead of creating new session
+        if (this.state.sessionId) {
+            this.setLoading(true, "Updating Profile...");
+            try {
+                await this.apiCall('/api/profile', profile);
+                this.state.profile = profile;
+                localStorage.setItem('ep_profile', JSON.stringify(profile));
+                this.init(); // Return to dashboard
+            } catch (err) {
+                alert("Update failed: " + err.message);
+            } finally {
+                this.setLoading(false);
+            }
+            return;
+        }
+
         this.setLoading(true, "Creating Session...");
         try {
             const res = await this.apiCall('/api/login', profile);
