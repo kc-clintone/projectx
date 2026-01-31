@@ -1,0 +1,26 @@
+{
+  "id": "6305c7cb-7e3e-4d98-8cb9-0d0ca623de94",
+  "student_id": "stu1",
+  "student_level": "grade10",
+  "subject": "math",
+  "tasks": [
+    {
+      "id": "t1",
+      "prompt": "1+1",
+      "estimated_secs": 60,
+      "complexity": 1,
+      "submitted_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "t2",
+      "prompt": "integral of x",
+      "estimated_secs": 60,
+      "complexity": 1,
+      "submitted_at": "0001-01-01T00:00:00Z",
+      "topics": [
+        "integral"
+      ]
+    }
+  ],
+  "created_at": "2026-01-31T08:14:42.565251918+03:00"
+}
