@@ -8,25 +8,30 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
+	"github.com/kc-clintone/study-coach/pkg/ai"
+	"github.com/kc-clintone/study-coach/pkg/coach"
+	"github.com/kc-clintone/study-coach/pkg/model"
+	"github.com/kc-clintone/study-coach/pkg/storage"
 )
 
 // createSessionHandler accepts student info and a list of tasks and returns a session with timers
 func createSessionHandler(w http.ResponseWriter, r *http.Request) {
-	var req CreateSessionRequest
+	var req model.CreateSessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
 	// basic validation: only accept educational subjects
-	if !IsEducationalSubject(req.Subject) {
+	if !coach.IsEducationalSubject(req.Subject) {
 		http.Error(w, "subject not educational", http.StatusBadRequest)
 		return
 	}
 
-	sess := NewSession(req.StudentID, req.StudentLevel, req.Subject, req.Tasks)
+	sess := coach.NewSession(req.StudentID, req.StudentLevel, req.Subject, req.Tasks)
 
-	if err := SaveSession(sess); err != nil {
+	if err := storage.SaveSession(sess); err != nil {
 		http.Error(w, "failed to save session", http.StatusInternalServerError)
 		return
 	}
@@ -37,13 +42,13 @@ func createSessionHandler(w http.ResponseWriter, r *http.Request) {
 
 // submitResultsHandler accepts completed work and timing info and produces an updated study plan
 func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
-	var res Submission
+	var res model.Submission
 	if err := json.NewDecoder(r.Body).Decode(&res); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
-	sess, err := LoadSession(res.SessionID)
+	sess, err := storage.LoadSession(res.SessionID)
 	if err != nil {
 		http.Error(w, "session not found", http.StatusNotFound)
 		return
@@ -60,20 +65,20 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	plan := GenerateStudyPlan(sess)
+	plan := coach.GenerateStudyPlan(sess)
 
-	if err := SaveStudyPlan(sess.StudentID, plan); err != nil {
+	if err := storage.SaveStudyPlan(sess.StudentID, plan); err != nil {
 		http.Error(w, "failed to save plan", http.StatusInternalServerError)
 		return
 	}
 
 	// --- gamification: update profile, streaks, achievements, snapshots ---
 	now := time.Now()
-	var profile *ProfileResponse
-	p, err := LoadProfile(sess.StudentID)
+	var profile *model.ProfileResponse
+	p, err := storage.LoadProfile(sess.StudentID)
 	if err != nil {
 		// create default profile
-		profile = &ProfileResponse{StudentID: sess.StudentID, Topics: map[string]int{}, Achievements: []string{}, Progress: map[string]int{}, WeeklyRecap: []TopicImprovement{}, Streak: 0}
+		profile = &model.ProfileResponse{StudentID: sess.StudentID, Topics: map[string]int{}, Achievements: []string{}, Progress: map[string]int{}, WeeklyRecap: []model.TopicImprovement{}, Streak: 0}
 	} else {
 		profile = p
 	}
@@ -126,21 +131,21 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Persist profile and snapshot of topics
-	if err := SaveProfile(profile.StudentID, profile); err == nil {
+	if err := storage.SaveProfile(profile.StudentID, profile); err == nil {
 		// build snapshot from current topics
-		if topics, err2 := LoadStudentTopics(profile.StudentID); err2 == nil {
-			snap := &TopicSnapshot{Timestamp: now, Topics: topics}
-			_ = SaveSnapshot(profile.StudentID, snap)
+		if topics, err2 := storage.LoadStudentTopics(profile.StudentID); err2 == nil {
+			snap := &model.TopicSnapshot{Timestamp: now, Topics: topics}
+			_ = storage.SaveSnapshot(profile.StudentID, snap)
 		}
 	}
 
 	// --- attach AI-generated summary to profile (if enabled) ---
 	// Build a concise prompt describing recent session and plan to generate a short summary
 	prompt := buildSummaryPrompt(sess, plan)
-	if summary, err := QueryGemini(prompt); err == nil {
+	if summary, err := ai.QueryGemini(prompt); err == nil {
 		profile.Summary = summary
 		// persist updated profile with summary
-		_ = SaveProfile(profile.StudentID, profile)
+		_ = storage.SaveProfile(profile.StudentID, profile)
 	}
 
 	// --- end gamification update ---
@@ -153,7 +158,7 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 func getStudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["student_id"]
-	plan, err := LoadStudyPlan(id)
+	plan, err := storage.LoadStudyPlan(id)
 	if err != nil {
 		http.Error(w, "plan not found", http.StatusNotFound)
 		return
@@ -166,7 +171,7 @@ func getStudyPlanHandler(w http.ResponseWriter, r *http.Request) {
 func getStudentTopicsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["student_id"]
-	m, err := LoadStudentTopics(id)
+	m, err := storage.LoadStudentTopics(id)
 	if err != nil {
 		http.Error(w, "failed to load topics", http.StatusInternalServerError)
 		return
@@ -180,15 +185,15 @@ func getProfileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["student_id"]
 	// load topics and recent snapshot
-	topics, _ := LoadStudentTopics(id)
-	snapshot, _ := LoadSnapshot(id)
+	topics, _ := storage.LoadStudentTopics(id)
+	snapshot, _ := storage.LoadSnapshot(id)
 	// build a simple profile response
-	profile := ProfileResponse{
+	profile := model.ProfileResponse{
 		StudentID:    id,
 		Topics:       topics,
 		Achievements: []string{},
 		Progress:     map[string]int{},
-		WeeklyRecap:  []TopicImprovement{},
+		WeeklyRecap:  []model.TopicImprovement{},
 	}
 	if snapshot != nil {
 		// compute weekly recap naive: compare snapshot topics to current (if any)
@@ -198,7 +203,7 @@ func getProfileHandler(w http.ResponseWriter, r *http.Request) {
 				prev = snapshot.Topics[k]
 			}
 			if v > prev {
-				profile.WeeklyRecap = append(profile.WeeklyRecap, TopicImprovement{Topic: k, ImprovedBy: v - prev})
+				profile.WeeklyRecap = append(profile.WeeklyRecap, model.TopicImprovement{Topic: k, ImprovedBy: v - prev})
 			}
 		}
 	}
@@ -207,14 +212,14 @@ func getProfileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // helper to append unique achievement and award badge/points
-func AddAchievement(p *ProfileResponse, name string) {
+func AddAchievement(p *model.ProfileResponse, name string) {
 	for _, a := range p.Achievements {
 		if a == name {
 			return
 		}
 	}
 	p.Achievements = append(p.Achievements, name)
-	if b, ok := GetBadgeByName(name); ok {
+	if b, ok := coach.GetBadgeByName(name); ok {
 		// add to earned badges and points
 		p.EarnedBadges = append(p.EarnedBadges, b)
 		p.Points += b.Points
@@ -222,7 +227,7 @@ func AddAchievement(p *ProfileResponse, name string) {
 }
 
 // buildSummaryPrompt composes a short prompt describing the session and study plan for the LLM
-func buildSummaryPrompt(sess *Session, plan *StudyPlan) string {
+func buildSummaryPrompt(sess *model.Session, plan *model.StudyPlan) string {
 	var b strings.Builder
 	b.WriteString("You are an educational assistant. Provide a concise summary (2-3 sentences) of the student's recent session, strengths, weaknesses, and 2 quick recommendations.\n\n")
 	b.WriteString("Session tasks:\n")
