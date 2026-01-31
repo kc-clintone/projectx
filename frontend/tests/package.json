@@ -1,0 +1,12 @@
+{
+  "name": "study-coach-frontend-tests",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "uvu"
+  },
+  "devDependencies": {
+    "uvu": "^0.5.5",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}
