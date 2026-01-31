@@ -77,12 +77,27 @@ type GenerateRequest struct {
 	Mode  string `json:"mode"`
 	Type  string `json:"type"`
 	Image string `json:"image,omitempty"` // Base64
+	Goal  string `json:"goal"`            // "QUIZ" or "PLAN"
+}
+
+type StudyPlanModule struct {
+	Topic        string `json:"topic"`
+	Description  string `json:"description"`
+	Activity     string `json:"activity"`
+	TimeEstimate string `json:"timeEstimate"`
+}
+
+type StudyPlanContent struct {
+	Title        string            `json:"title"`
+	Introduction string            `json:"introduction"`
+	Modules      []StudyPlanModule `json:"modules"`
 }
 
 type GenerateResponse struct {
-	Questions []QuizQuestion `json:"questions"`
-	IsValid   bool           `json:"isValid"`
-	Reason    string         `json:"reason,omitempty"`
+	Questions []QuizQuestion    `json:"questions,omitempty"`
+	StudyPlan *StudyPlanContent `json:"studyPlan,omitempty"`
+	IsValid   bool              `json:"isValid"`
+	Reason    string            `json:"reason,omitempty"`
 }
 
 // --- State Management (Simulated DB) ---
@@ -155,45 +170,86 @@ func generateQuizAI(ctx context.Context, profile UserProfile, req GenerateReques
 	model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{genai.Text(SystemGuardrail)},
 	}
-	model.ResponseSchema = &genai.Schema{
-		Type: genai.TypeObject,
-		Properties: map[string]*genai.Schema{
-			"isValidTopic":    {Type: genai.TypeBoolean},
-			"rejectionReason": {Type: genai.TypeString},
-			"questions": {
-				Type: genai.TypeArray,
-				Items: &genai.Schema{
+
+	var prompt string
+
+	if req.Goal == "PLAN" {
+		model.ResponseSchema = &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"isValidTopic":    {Type: genai.TypeBoolean},
+				"rejectionReason": {Type: genai.TypeString},
+				"studyPlan": {
 					Type: genai.TypeObject,
 					Properties: map[string]*genai.Schema{
-						"id":               {Type: genai.TypeString},
-						"type":             {Type: genai.TypeString, Enum: []string{"MCQ", "OPEN"}},
-						"text":             {Type: genai.TypeString},
-						"options":          {Type: genai.TypeArray, Items: &genai.Schema{Type: genai.TypeString}},
-						"correctIndex":     {Type: genai.TypeInteger},
-						"explanation":      {Type: genai.TypeString},
-						"timeLimitSeconds": {Type: genai.TypeInteger},
+						"title":        {Type: genai.TypeString},
+						"introduction": {Type: genai.TypeString},
+						"modules": {
+							Type: genai.TypeArray,
+							Items: &genai.Schema{
+								Type: genai.TypeObject,
+								Properties: map[string]*genai.Schema{
+									"topic":        {Type: genai.TypeString},
+									"description":  {Type: genai.TypeString},
+									"activity":     {Type: genai.TypeString},
+									"timeEstimate": {Type: genai.TypeString},
+								},
+								Required: []string{"topic", "description", "activity", "timeEstimate"},
+							},
+						},
 					},
-					Required: []string{"id", "type", "text", "explanation", "timeLimitSeconds"},
+					Required: []string{"title", "introduction", "modules"},
 				},
 			},
-		},
-		Required: []string{"isValidTopic", "questions"},
-	}
+			Required: []string{"isValidTopic"},
+		}
+		prompt = fmt.Sprintf(`Generate a structured study plan for:
+		Topic: %s
+		Target Audience: %s
+		
+		Follow System Instructions. If valid, provide a step-by-step study plan.`, req.Topic, profile.Grade)
+	} else {
+		// Default to Quiz
+		model.ResponseSchema = &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"isValidTopic":    {Type: genai.TypeBoolean},
+				"rejectionReason": {Type: genai.TypeString},
+				"questions": {
+					Type: genai.TypeArray,
+					Items: &genai.Schema{
+						Type: genai.TypeObject,
+						Properties: map[string]*genai.Schema{
+							"id":               {Type: genai.TypeString},
+							"type":             {Type: genai.TypeString, Enum: []string{"MCQ", "OPEN"}},
+							"text":             {Type: genai.TypeString},
+							"options":          {Type: genai.TypeArray, Items: &genai.Schema{Type: genai.TypeString}},
+							"correctIndex":     {Type: genai.TypeInteger},
+							"explanation":      {Type: genai.TypeString},
+							"timeLimitSeconds": {Type: genai.TypeInteger},
+						},
+						Required: []string{"id", "type", "text", "explanation", "timeLimitSeconds"},
+					},
+				},
+			},
+			Required: []string{"isValidTopic", "questions"},
+		}
 
-	prompt := fmt.Sprintf(`Evaluate and generate a 5-question quiz for:
-    Prompt/Topic: %s
-    Difficulty: %s
-    Question Format Preference: %s
-    
-    Follow the System Instructions for content safety.
-    If valid, generate questions based on the format preference.`+
-		`\n\nStrict Requirements:
-    - If Format is MCQ: All questions must be MCQ with 4 options.
-    - If Format is OPEN: All questions must be open-ended requiring a written response.
-    - If Format is MIXED: Provide a blend of MCQ and open-ended.
-    - Ensure all questions are academically rigorous.
-    - Provide a clear 'explanation' for the ideal answer for every question.`,
-		req.Topic, profile.Grade, req.Type)
+		prompt = fmt.Sprintf(`Evaluate and generate a 5-question quiz for:
+		Prompt/Topic: %s
+		Difficulty: %s
+		Question Format Preference: %s
+		
+		Follow the System Instructions for content safety.
+		If valid, generate questions based on the format preference.`+
+			`\n\nStrict Requirements:
+		- If Format is MCQ: All questions must be MCQ with 4 options.
+		- If Format is OPEN: All questions must be open-ended requiring a written response.
+		- If Format is MIXED: Provide a blend of MCQ and open-ended.
+		- Ensure all questions are academically rigorous.
+		- Provide a clear 'explanation' for the ideal answer for every question.`,
+			req.Topic, profile.Grade, req.Type)
+	}
 
 	parts := []genai.Part{genai.Text(prompt)}
 
@@ -225,9 +281,10 @@ func generateQuizAI(ctx context.Context, profile UserProfile, req GenerateReques
 	}
 
 	var rawResp struct {
-		IsValidTopic    bool           `json:"isValidTopic"`
-		RejectionReason string         `json:"rejectionReason"`
-		Questions       []QuizQuestion `json:"questions"`
+		IsValidTopic    bool              `json:"isValidTopic"`
+		RejectionReason string            `json:"rejectionReason"`
+		Questions       []QuizQuestion    `json:"questions"`
+		StudyPlan       *StudyPlanContent `json:"studyPlan"`
 	}
 
 	// Extract JSON from the first part
@@ -242,6 +299,7 @@ func generateQuizAI(ctx context.Context, profile UserProfile, req GenerateReques
 
 	return &GenerateResponse{
 		Questions: rawResp.Questions,
+		StudyPlan: rawResp.StudyPlan,
 		IsValid:   rawResp.IsValidTopic,
 		Reason:    rawResp.RejectionReason,
 	}, nil
