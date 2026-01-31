@@ -244,6 +244,10 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// attach last plan to profile for quick dashboard access
+	profile.LastPlan = plan
+	_ = storage.SaveProfile(profile.StudentID, profile)
+
 	// --- attach AI-generated summary to profile (if enabled) ---
 	// Build a concise prompt describing recent session and plan to generate a short summary
 	prompt := buildSummaryPrompt(sess, plan)
