@@ -364,7 +364,7 @@ const app = {
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                         </svg>
                         <p class="text-[11px] text-amber-800 font-medium leading-relaxed">
-                            <strong>Educational Policy:</strong> EduPulse AI is strictly for academic and learning purposes. Topics involving violence, illegal acts, or inappropriate content will be automatically rejected.
+                            <strong>Educational Policy:</strong> EduPulse is strictly for academic and learning purposes. Topics involving violence, illegal acts, or inappropriate content will be automatically rejected.
                         </p>
                     </div>
                 </div>
@@ -551,7 +551,7 @@ const app = {
         } else {
             inputHtml = `<div class="space-y-4">
                 <textarea oninput="app.handleTextInput(this.value)" class="w-full h-48 p-6 rounded-2xl border-2 border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all outline-none resize-none text-slate-700 font-medium leading-relaxed bg-slate-50/50" placeholder="Type your explanation here...">${currentResponse || ''}</textarea>
-                <p class="text-xs text-slate-400">EduPulse AI will evaluate your reasoning based on conceptual accuracy.</p>
+                <p class="text-xs text-slate-400">EduPulse will evaluate your reasoning based on conceptual accuracy.</p>
             </div>`;
         }
 

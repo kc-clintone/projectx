@@ -120,7 +120,7 @@ var (
 	geminiClient *genai.Client
 )
 
-const SystemGuardrail = `You are a strict Educational Guardian for EduPulse AI. 
+const SystemGuardrail = `You are a strict Educational Guardian for EduPulse. 
 Your SOLE purpose is to facilitate academic and professional learning. 
 1. Only generate content related to school subjects, professional skills, or constructive hobbies.
 2. REJECT any topics that are: violent, sexually explicit, involving illegal activities, purely celebrity gossip, hateful, or otherwise inappropriate for a classroom.
@@ -843,7 +843,7 @@ func main() {
 		port = "8080"
 	}
 
-	fmt.Printf("EduPulse AI (Go Version) running on http://localhost:%s\n", port)
+	fmt.Printf("EduPulse (Go Version) running on http://localhost:%s\n", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}

@@ -1,10 +1,10 @@
-# EduPulse AI (Go Version)
+# EduPulse
 
-EduPulse AI is an intelligent educational platform designed to facilitate academic and professional learning. Powered by Google's Gemini AI, it dynamically generates quizzes and study plans based on user-defined topics, analyzes performance to provide personalized feedback, and tracks progress over time.
+EduPulse is an intelligent educational platform designed to facilitate academic and professional learning. Powered by Google's Gemini AI, it dynamically generates quizzes and study plans based on user-defined topics, analyzes performance to provide personalized feedback, and tracks progress over time.
 
 ## Problem Statement
 
-Traditional education systems often struggle to provide personalized attention to every student due to resource constraints. The "one-size-fits-all" approach to testing and study materials can leave students behind or fail to challenge advanced learners. EduPulse AI addresses this gap by providing an on-demand, adaptive tutor that creates assessments and learning paths tailored to the user's specific grade level, topic of interest, and performance history.
+Traditional education systems often struggle to provide personalized attention to every student due to resource constraints. The "one-size-fits-all" approach to testing and study materials can leave students behind or fail to challenge advanced learners. EduPulse addresses this gap by providing an on-demand, adaptive tutor that creates assessments and learning paths tailored to the user's specific grade level, topic of interest, and performance history.
 
 ## SDG Alignment
 
