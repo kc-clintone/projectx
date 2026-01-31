@@ -408,6 +408,29 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"sessionId": sessionID})
 }
 
+func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
+	var profile UserProfile
+	if err := json.NewDecoder(r.Body).Decode(&profile); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	sessionID := r.Header.Get("X-Session-ID")
+	storeMutex.Lock()
+	sess, exists := sessionStore[sessionID]
+	if !exists {
+		storeMutex.Unlock()
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sess.Profile = profile
+	storeMutex.Unlock()
+	saveSessions()
+
+	json.NewEncoder(w).Encode(map[string]string{"status": "updated"})
+}
+
 func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.Header.Get("X-Session-ID")
 	storeMutex.RLock()
@@ -568,6 +591,7 @@ func main() {
 
 	// API Routes
 	http.HandleFunc("/api/login", handleLogin)
+	http.HandleFunc("/api/profile", handleUpdateProfile)
 	http.HandleFunc("/api/generate", handleGenerate)
 	http.HandleFunc("/api/analyze", handleAnalyze)
 	http.HandleFunc("/api/history", handleHistory)
