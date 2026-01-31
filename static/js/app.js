@@ -1,7 +1,6 @@
 const app = {
     state: {
         sessionId: localStorage.getItem('ep_session'),
-        profile: JSON.parse(localStorage.getItem('ep_profile') || 'null'),
         questions: [],
         currentQuestionIndex: 0,
         userResponses: [],
@@ -14,15 +13,10 @@ const app = {
     },
 
     init() {
-        if (this.state.sessionId && this.state.profile) {
-            this.renderConfig();
-            const nameEl = document.getElementById('user-name');
-            nameEl.textContent = `Hi, ${this.state.profile.name}`;
-            nameEl.classList.add('cursor-pointer', 'hover:text-indigo-600', 'transition-colors');
-            nameEl.onclick = () => app.renderProfile();
-            document.getElementById('user-info').classList.remove('hidden');
+        if (this.state.sessionId) {
+            this.loadDashboard();
         } else {
-            this.renderProfile();
+            this.renderAuth();
         }
     },
 
@@ -65,8 +59,8 @@ const app = {
             body: JSON.stringify(body)
         });
         
-        // Handle session expiration (happens when Go server restarts)
-        if (res.status === 401) {
+        // Fix: Only treat 401 as session expiration if we actually sent a session ID (i.e., we were logged in)
+        if (res.status === 401 && this.state.sessionId) {
             this.logout();
             throw new Error("Session expired. Please sign in again.");
         }
@@ -82,50 +76,210 @@ const app = {
 
     // --- Views ---
 
-    renderProfile() {
-        const p = this.state.profile || {};
-        const isEditing = !!this.state.sessionId;
+    renderAuth(mode = 'login') {
+        const container = document.getElementById('app-container');
+        document.getElementById('user-info').classList.add('hidden');
+        
+        container.innerHTML = `
+            <div class="min-h-[60vh] flex items-center justify-center">
+                <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 max-w-xl w-full border border-slate-100 fade-in relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-violet-500"></div>
+                    <div class="text-center mb-10">
+                        <h2 class="text-3xl font-black text-slate-900 mb-3">${mode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
+                        <p class="text-slate-500 font-medium">Sign in to access your personalized learning dashboard.</p>
+                    </div>
+                    
+                    <div class="flex mb-8 bg-slate-100 p-1 rounded-xl">
+                        <button onclick="app.renderAuth('login')" class="flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'login' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}">Login</button>
+                        <button onclick="app.renderAuth('signup')" class="flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'signup' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}">Sign Up</button>
+                    </div>
+
+                    <form onsubmit="app.handleAuthSubmit(event, '${mode}')" class="space-y-6">
+                        ${mode === 'signup' ? `
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 ml-1">Full Name</label>
+                            <input name="name" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none bg-slate-50/50">
+                        </div>` : ''}
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 ml-1">Email Address</label>
+                            <input type="email" name="email" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none bg-slate-50/50">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 ml-1">Password</label>
+                            <input type="password" name="password" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none bg-slate-50/50">
+                        </div>
+
+                        ${mode === 'signup' ? `
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-bold text-slate-700 ml-1">Grade Level / Academic Stage</label>
+                                <select name="grade" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none bg-slate-50/50">
+                                    <option value="">Select your level</option>
+                                    <option value="Elementary">Elementary School</option>
+                                    <option value="Middle">Middle School</option>
+                                    <option value="High">High School</option>
+                                    <option value="University">University / College</option>
+                                    <option value="Professional">Professional Certification</option>
+                                    <option value="Lifelong Learner">Lifelong Learner</option>
+                                </select>
+                            </div>
+                        </div>` : ''}
+
+                        <button type="submit" class="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+                            <span>${mode === 'login' ? 'Sign In' : 'Create Account'}</span>
+                        </button>
+                        
+                        <div class="mt-6 text-center border-t border-slate-100 pt-6">
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-3">Or continue without an account</p>
+                            <button type="button" onclick="app.renderGuestSetup()" class="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                                Continue as Guest
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+    },
+
+    renderGuestSetup() {
         const container = document.getElementById('app-container');
         container.innerHTML = `
             <div class="min-h-[60vh] flex items-center justify-center">
                 <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 max-w-xl w-full border border-slate-100 fade-in relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-violet-500"></div>
                     <div class="text-center mb-10">
-                        <h2 class="text-3xl font-black text-slate-900 mb-3">${isEditing ? 'Edit Profile' : 'Complete Your Profile'}</h2>
-                        <p class="text-slate-500 font-medium">This helps us tailor the difficulty of your assessments.</p>
+                        <h2 class="text-3xl font-black text-slate-900 mb-3">Guest Access</h2>
+                        <p class="text-slate-500 font-medium">We just need a few details to personalize your experience.</p>
                     </div>
-                    <form onsubmit="app.handleProfileSubmit(event)" class="space-y-8">
-                        <div class="space-y-6">
-                            <div class="space-y-2">
-                                <label class="block text-sm font-bold text-slate-700 ml-1">Full Name</label>
-                                <input name="name" value="${p.name || ''}" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none bg-slate-50/50" placeholder="How should we address you?">
-                            </div>
-                            <div class="space-y-2">
-                                <label class="block text-sm font-bold text-slate-700 ml-1">Grade Level / Academic Stage</label>
-                                <select name="grade" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none bg-slate-50/50">
-                                    <option value="">Select your level</option>
-                                    <option value="Elementary" ${p.grade === 'Elementary' ? 'selected' : ''}>Elementary School</option>
-                                    <option value="Middle" ${p.grade === 'Middle' ? 'selected' : ''}>Middle School</option>
-                                    <option value="High" ${p.grade === 'High' ? 'selected' : ''}>High School</option>
-                                    <option value="University" ${p.grade === 'University' ? 'selected' : ''}>University / College</option>
-                                    <option value="Professional" ${p.grade === 'Professional' ? 'selected' : ''}>Professional Certification</option>
-                                    <option value="Lifelong Learner" ${p.grade === 'Lifelong Learner' ? 'selected' : ''}>Lifelong Learner</option>
-                                </select>
-                            </div>
+                    <form onsubmit="app.handleGuestSubmit(event)" class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 ml-1">Full Name</label>
+                            <input name="name" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none bg-slate-50/50" placeholder="Guest User">
                         </div>
-                        <div class="flex gap-3">
-                            ${isEditing ? `
-                            <button type="button" onclick="app.init()" class="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all">
-                                Cancel
-                            </button>` : ''}
-                            <button type="submit" class="flex-[2] py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
-                                <span>${isEditing ? 'Save Changes' : 'Finish Setup'}</span>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                </svg>
-                            </button>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 ml-1">Grade Level</label>
+                            <select name="grade" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none bg-slate-50/50">
+                                <option value="">Select your level</option>
+                                <option value="Elementary">Elementary School</option>
+                                <option value="Middle">Middle School</option>
+                                <option value="High">High School</option>
+                                <option value="University">University / College</option>
+                                <option value="Professional">Professional Certification</option>
+                                <option value="Lifelong Learner">Lifelong Learner</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+                            <span>Start Learning</span>
+                        </button>
+                        <div class="mt-4 text-center">
+                            <button type="button" onclick="app.renderAuth()" class="text-sm font-bold text-slate-400 hover:text-slate-600">Back to Login</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        `;
+    },
+
+    async loadDashboard() {
+        this.setLoading(true, "Loading Dashboard...");
+        try {
+            const data = await this.apiCall('/api/dashboard', {});
+            this.renderDashboard(data);
+            
+            // Update Header
+            const nameEl = document.getElementById('user-name');
+            nameEl.textContent = `Hi, ${data.profile.name}`;
+            document.getElementById('user-info').classList.remove('hidden');
+        } catch (err) {
+            console.error(err);
+            alert("Failed to load dashboard: " + err.message);
+            this.logout();
+        } finally {
+            this.setLoading(false);
+        }
+    },
+
+    renderDashboard(data) {
+        const container = document.getElementById('app-container');
+        const weakString = data.weaknesses ? data.weaknesses.join(', ') : '';
+        const recentActivity = data.recentActivity || [];
+        const recommendations = data.recommendations || [];
+        
+        container.innerHTML = `
+            <div class="space-y-8 fade-in">
+                <!-- Stats Row -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-black text-slate-900">${data.totalQuizzes}</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase">Quizzes Taken</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-black text-slate-900">${Math.round(data.averageScore)}%</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase">Average Score</div>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-600 to-violet-600 p-6 rounded-2xl shadow-lg text-white flex flex-col justify-center items-start cursor-pointer hover:shadow-indigo-200 transition-shadow" onclick="app.renderConfig()">
+                        <div class="font-bold text-lg mb-1">Start New Session</div>
+                        <div class="text-indigo-100 text-xs">Launch a quiz or study plan</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Recommendations -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-white p-8 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                AI Recommendations
+                            </h3>
+                            <div class="space-y-4">
+                                ${recommendations.map(rec => `
+                                    <div class="flex items-start gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></div>
+                                        <p class="text-slate-600 text-sm leading-relaxed">${rec}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${data.weaknesses && data.weaknesses.length > 0 ? `
+                                <div class="mt-6 pt-6 border-t border-slate-100">
+                                    <p class="text-xs text-slate-400 mb-3 uppercase font-bold tracking-wider">Based on identified weaknesses</p>
+                                    <button onclick="app.generateRemedialPlan('${weakString.replace(/'/g, "\\'")}')" class="w-full py-3 bg-indigo-50 text-indigo-600 font-bold rounded-xl hover:bg-indigo-100 transition-colors text-sm flex items-center justify-center gap-2">
+                                        Generate Remedial Study Plan
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 h-fit">
+                        <h3 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest">Recent Activity</h3>
+                        <div class="space-y-4">
+                            ${recentActivity.map(item => `
+                                <div class="p-4 rounded-xl border border-slate-100 hover:border-indigo-200 transition-colors">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="text-xs font-bold text-slate-400">${new Date(item.timestamp).toLocaleDateString()}</span>
+                                        <span class="px-2 py-1 rounded text-[10px] font-bold ${item.result.correctAnswers/item.result.totalQuestions > 0.7 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">
+                                            ${Math.round((item.result.correctAnswers || 0) / (item.result.totalQuestions || 1) * 100)}% Score
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 line-clamp-2">${item.analysis.summary}</p>
+                                </div>
+                            `).join('')}
+                            ${recentActivity.length === 0 ? '<p class="text-sm text-slate-400 italic">No quizzes taken yet.</p>' : ''}
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -136,6 +290,10 @@ const app = {
         container.innerHTML = `
             <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6 sm:p-10 max-w-2xl mx-auto border border-slate-100 fade-in">
                 <div class="mb-8">
+                    <button onclick="app.loadDashboard()" class="mb-4 text-sm font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                        Back to Dashboard
+                    </button>
                     <h2 class="text-2xl font-bold text-slate-900 mb-2">Create New Quiz</h2>
                     <p class="text-slate-500 text-sm">Enter an educational prompt or upload study material to begin.</p>
                     <div class="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3">
@@ -414,7 +572,7 @@ const app = {
                             <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest">Personalized Study Plan</span>
                             <h2 class="text-3xl font-black text-slate-900 mt-2">${plan.title}</h2>
                         </div>
-                        <button onclick="app.renderConfig()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                        <button onclick="app.loadDashboard()" class="text-slate-400 hover:text-slate-600 transition-colors">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
@@ -614,41 +772,52 @@ const app = {
 
     // --- Handlers ---
 
-    async handleProfileSubmit(e) {
+    async handleAuthSubmit(e, mode) {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const profile = { name: formData.get('name'), grade: formData.get('grade') };
-        
-        // If session exists, update profile instead of creating new session
-        if (this.state.sessionId) {
-            this.setLoading(true, "Updating Profile...");
-            try {
-                await this.apiCall('/api/profile', profile);
-                this.state.profile = profile;
-                localStorage.setItem('ep_profile', JSON.stringify(profile));
-                this.init(); // Return to dashboard
-            } catch (err) {
-                alert("Update failed: " + err.message);
-            } finally {
-                this.setLoading(false);
-            }
-            return;
-        }
+        const data = Object.fromEntries(formData.entries());
 
-        this.setLoading(true, "Creating Session...");
+        this.setLoading(true, mode === 'login' ? "Signing In..." : "Creating Account...");
         try {
-            const res = await this.apiCall('/api/login', profile);
+            const endpoint = mode === 'login' ? '/api/login' : '/api/signup';
+            const res = await this.apiCall(endpoint, data);
+            
             this.state.sessionId = res.sessionId;
-            this.state.profile = profile;
-            
             localStorage.setItem('ep_session', res.sessionId);
-            localStorage.setItem('ep_profile', JSON.stringify(profile));
             
-            this.init();
+            this.loadDashboard();
         } catch (err) {
-            alert("Login failed: " + err.message);
+            alert("Authentication failed: " + err.message);
         } finally {
             this.setLoading(false);
+        }
+    },
+
+    async handleGuestSubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        this.setLoading(true, "Setting up Guest Session...");
+        try {
+            const res = await this.apiCall('/api/guest', data);
+            this.state.sessionId = res.sessionId;
+            localStorage.setItem('ep_session', res.sessionId);
+            this.loadDashboard();
+        } catch (err) {
+            alert("Guest setup failed: " + err.message);
+        } finally {
+            this.setLoading(false);
+        }
+    },
+
+    generateRemedialPlan(weaknesses) {
+        // Pre-fill the config form with a prompt to address weaknesses
+        this.renderConfig();
+        this.setGoal('PLAN');
+        const textarea = document.querySelector('textarea[name="topic"]');
+        if (textarea) {
+            textarea.value = `Create a remedial study plan to address the following weaknesses: ${weaknesses}. Focus on fundamental concepts and practice exercises.`;
         }
     },
 
@@ -851,7 +1020,6 @@ const app = {
 
     logout() {
         localStorage.removeItem('ep_session');
-        localStorage.removeItem('ep_profile');
         location.reload();
     }
 };
