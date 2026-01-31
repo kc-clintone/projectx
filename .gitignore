@@ -3,3 +3,6 @@ node_modules/
 playwright-report/
 .env.local
 /data/
+
+# ignore backend data files
+backend/data/
