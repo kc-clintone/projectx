@@ -7,7 +7,7 @@
   "recent_achievements": [
     {
       "name": "First Steps",
-      "earned_at": "2026-01-31T08:15:51.444741763+03:00"
+      "earned_at": "2026-01-31T08:16:15.827513617+03:00"
     }
   ],
   "earned_badges": [
@@ -24,11 +24,11 @@
   "progress_percent": {},
   "weekly_recap": [],
   "streak": 1,
-  "last_active": "2026-01-31T08:15:51.444720168+03:00",
+  "last_active": "2026-01-31T08:16:15.827490455+03:00",
   "last_plan": {
     "student_id": "stu1",
     "subject": "math",
-    "created_at": "2026-01-31T08:15:51.444215003+03:00",
+    "created_at": "2026-01-31T08:16:15.827213445+03:00",
     "focus": {
       "integral": "review topic, practice similar problems"
     },
