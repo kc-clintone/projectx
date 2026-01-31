@@ -12,3 +12,11 @@ input,textarea{font-family:inherit;padding:6px;border:1px solid #eef2f7;border-r
 .confetti-canvas{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .badge{display:inline-block;width:40px;height:40px;margin-right:6px}
 .badge svg{width:100%;height:100%}
+.badges-row{display:flex;gap:8px;flex-wrap:wrap}
+.badge-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;color:#fff;font-weight:600}
+.badge-chip .icon{font-size:18px}
+.achievements-list{list-style:none;padding:0;margin:0}
+.achievements-list li{padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,rgba(2,6,23,0.03),rgba(2,6,23,0.01));margin-bottom:6px}
+
+/* small responsive adjustments */
+@media (max-width:600px){ .app{padding:12px;margin:12px} .card{padding:10px} }
