@@ -2,10 +2,13 @@ package main
 
 import (
 	"math"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/kc-clintone/study-coach/model"
 )
 
 // simplistic subject whitelist
@@ -18,12 +21,14 @@ var eduSubjects = map[string]bool{
 	"english":   true,
 }
 
+// IsEducationalSubject checks if a subject is in the whitelist.
 func IsEducationalSubject(s string) bool {
 	s = strings.ToLower(strings.TrimSpace(s))
 	_, ok := eduSubjects[s]
 	return ok
 }
 
+// NewSession creates a new study session, initializing task metadata.
 func NewSession(studentID, studentLevel, subject string, tasks []Task) *Session {
 	for i := range tasks {
 		if tasks[i].Complexity == 0 {
@@ -43,12 +48,22 @@ func NewSession(studentID, studentLevel, subject string, tasks []Task) *Session 
 	}
 }
 
+// EstimateTimeForComplexity returns a per-task estimated seconds based on complexity and student level.
 func EstimateTimeForComplexity(c int) int {
 	base := 60 // 1 minute per complexity unit
 	return int(math.Max(30, float64(base*c)))
 }
 
+// InferComplexity inspects a task prompt and returns a complexity score 1..5.
+// This uses simple heuristics and is intentionally lightweight for the hackathon.
 func InferComplexity(prompt, level string) int {
+	p := strings.ToLower(prompt)
+	if strings.Contains(p, "integral") || strings.Contains(p, "derivative") || strings.Contains(p, "prove") {
+		return 5
+	}
+	if strings.Contains(p, "simplify") || strings.Contains(p, "factor") {
+		return 3
+	}
 	// naive heuristics for hackathon: length-based
 	l := len(prompt)
 	switch {
@@ -142,90 +157,53 @@ func UpdateStudentTopicFrequencies(studentID string, topics []string, incorrect 
 }
 
 // GenerateStudyPlan analyzes a completed session and returns a StudyPlan. It adjusts
-// next-timers based on actual performance, records topic frequencies, and fills the
+// next-timers based on actual performance: faster completions reduce suggested time,
+// slower completions increase it. It also records topic frequencies and fills the
 // Focus map with short recommendations. If Gemini is enabled (GEMINI_ENABLED=1) the
 // function will call QueryGemini to produce a concise, human-friendly recommendation
 // per topic; otherwise it uses a simple rule-based recommendation.
-func GenerateStudyPlan(s *Session) *StudyPlan {
-	plan := &StudyPlan{
-		StudentID: s.StudentID,
-		Subject:   s.Subject,
-		CreatedAt: time.Now(),
-		Focus:     map[string]string{},
-	}
-	var nextTimers []int
-	for _, t := range s.Tasks {
-		// if incorrect, add focus area and update student topic frequencies
+func GenerateStudyPlan(sess *model.Session) *model.StudyPlan {
+	plan := &model.StudyPlan{StudentID: sess.StudentID, Subject: sess.Subject, CreatedAt: time.Now(), Focus: map[string]string{}, NextTimers: []int{}}
+	// naive topic aggregation
+	topics := map[string]int{}
+	for _, t := range sess.Tasks {
+		for _, tp := range t.Topics {
+			topics[tp] = topics[tp] + 1
+		}
+		// adjust next timer based on actual performance
+		newTimer := t.EstimatedSecs
+		if t.ActualSeconds > 0 {
+			if t.ActualSeconds < t.EstimatedSecs {
+				// faster than estimate -> reduce next timer by 25%
+				newTimer = int(float64(t.EstimatedSecs) * 0.75)
+			} else if t.ActualSeconds > t.EstimatedSecs {
+				// slower than estimate -> increase next timer by 25%
+				newTimer = int(float64(t.EstimatedSecs) * 1.25)
+			}
+		}
+		if newTimer < 15 {
+			newTimer = 15
+		}
+		plan.NextTimers = append(plan.NextTimers, newTimer)
+		// update topic frequencies if incorrect
 		if t.Correct != nil && !*t.Correct {
-			// use topic if available, else prompt snippet
-			key := "general"
-			if len(t.Topics) > 0 {
-				key = t.Topics[0]
-			}
-			plan.Focus[key] = "review topic, practice similar problems"
-			_ = UpdateStudentTopicFrequencies(s.StudentID, t.Topics, true)
-		}
-		// adjust next timer based on speed
-		est := t.EstimatedSecs
-		actual := t.ActualSeconds
-		if actual == 0 {
-			actual = est
-		}
-		ratio := float64(actual) / float64(est)
-		var adj float64 = 1.0
-		if ratio < 0.8 {
-			adj = 0.9
-		} else if ratio > 1.2 {
-			adj = 1.15
-		}
-		next := int(math.Round(float64(est) * adj))
-		nextTimers = append(nextTimers, next)
-	}
-	// integrate student-wide topic frequencies into focus (top 3)
-	if m, err := LoadStudentTopics(s.StudentID); err == nil {
-		type kv struct {
-			k string
-			v int
-		}
-		var arr []kv
-		for k, v := range m {
-			if v > 0 {
-				arr = append(arr, kv{k, v})
-			}
-		}
-		for i := 0; i < len(arr); i++ {
-			for j := i + 1; j < len(arr); j++ {
-				if arr[j].v > arr[i].v {
-					arr[i], arr[j] = arr[j], arr[i]
-				}
-			}
-		}
-		for i := 0; i < len(arr) && i < 3; i++ {
-			if _, ok := plan.Focus[arr[i].k]; !ok {
-				plan.Focus[arr[i].k] = "practice more problems in this topic"
-			}
+			_ = UpdateStudentTopicFrequencies(sess.StudentID, t.Topics, true)
 		}
 	}
-
-	// If Gemini is enabled, attempt to enrich each focus entry with an AI-generated
-	// recommendation. This is gated by GEMINI_ENABLED and will behave as a no-op when
-	// disabled, keeping the function deterministic for tests.
-	for topic := range plan.Focus {
-		// build a short prompt for the model
-		prompt := "You are an educational assistant. Given a student who struggled or needs practice in the topic '" + topic + "', provide a single concise (one-sentence) actionable recommendation and one short practice suggestion."
+	// pick topics with most counts
+	for k := range topics {
+		plan.Focus[k] = "review topic, practice similar problems"
+	}
+	// attempt to enrich with AI if enabled
+	if os.Getenv("GEMINI_ENABLED") == "1" {
+		// Build prompt and call QueryGemini
+		prompt := "Suggest one short recommendation per topic"
 		if summary, err := QueryGemini(prompt); err == nil {
-			// use the model output as the recommendation (trim to reasonable length)
-			if len(summary) > 0 {
-				if len(summary) > 300 {
-					plan.Focus[topic] = summary[:300]
-				} else {
-					plan.Focus[topic] = summary
-				}
+			for k := range plan.Focus {
+				plan.Focus[k] = summary
 			}
 		}
 	}
-
-	plan.NextTimers = nextTimers
 	return plan
 }
 

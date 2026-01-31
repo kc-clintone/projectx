@@ -42,7 +42,9 @@ func loadGeminiKey() string {
 
 // QueryGemini sends a prompt to the configured Gemini-compatible model and returns the
 // generated text. It will only perform real external HTTP calls if GEMINI_ENABLED=1
-// and GEMINI_API_KEY is configured.
+// and GEMINI_API_KEY is configured. The request URL can be overridden in tests and
+// alternate deployments by setting GEMINI_API_URL environment variable; the value
+// will be used as the base URL and the API key will be appended as a query parameter.
 func QueryGemini(prompt string) (string, error) {
 	if os.Getenv("GEMINI_ENABLED") != "1" {
 		return "", fmt.Errorf("gemini disabled: set GEMINI_ENABLED=1 to enable external calls")
@@ -53,7 +55,18 @@ func QueryGemini(prompt string) (string, error) {
 		return "", fmt.Errorf("GEMINI_API_KEY not configured; set GEMINI_API_KEY in environment or in .env.local")
 	}
 
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta2/models/gemini-3-flash-preview:generateText?key=%s", key)
+	// Allow overriding the base URL for testing or alternative endpoints
+	baseURL := os.Getenv("GEMINI_API_URL")
+	if baseURL == "" {
+		baseURL = "https://generativelanguage.googleapis.com/v1beta2/models/gemini-3-flash-preview:generateText"
+	}
+	// append key as query parameter (handle existing query string)
+	url := baseURL
+	if strings.Contains(url, "?") {
+		url = fmt.Sprintf("%s&key=%s", url, key)
+	} else {
+		url = fmt.Sprintf("%s?key=%s", url, key)
+	}
 
 	reqBody := map[string]interface{}{
 		"prompt": map[string]interface{}{
