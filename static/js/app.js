@@ -133,7 +133,7 @@ const app = {
                     <p class="text-slate-500 text-sm">Enter an educational prompt or upload study material to begin.</p>
                     <div class="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3">
                         <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                         </svg>
                         <p class="text-[11px] text-amber-800 font-medium leading-relaxed">
                             <strong>Educational Policy:</strong> EduPulse AI is strictly for academic and learning purposes. Topics involving violence, illegal acts, or inappropriate content will be automatically rejected.
@@ -143,10 +143,24 @@ const app = {
 
                 <form onsubmit="app.handleConfigSubmit(event)" class="space-y-6">
                     <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-700 block">Goal</label>
+                        <input type="hidden" name="goal" id="input-goal" value="QUIZ">
+                        <div class="flex p-1 bg-slate-100 rounded-xl">
+                            <button type="button" onclick="app.setGoal('QUIZ')" id="btn-goal-QUIZ" class="flex-1 py-2 rounded-lg text-sm font-bold transition-all bg-white text-indigo-600 shadow-sm">
+                                Take a Quiz
+                            </button>
+                            <button type="button" onclick="app.setGoal('PLAN')" id="btn-goal-PLAN" class="flex-1 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-700">
+                                Generate Study Plan
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
                         <label class="text-sm font-semibold text-slate-700">Educational Prompt</label>
                         <textarea name="topic" required rows="4" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none resize-none bg-slate-50/30" placeholder="Describe what you want to learn or ask a specific question. e.g., 'Explain the process of photosynthesis and test me on the light-dependent reactions.'"></textarea>
                     </div>
 
+                    <div id="quiz-options" class="space-y-6">
                     <div class="space-y-4">
                         <label class="text-sm font-semibold text-slate-700 block">Question Type</label>
                         <input type="hidden" name="type" id="input-type" value="MCQ">
@@ -164,6 +178,7 @@ const app = {
                                 <div class="text-[10px] text-slate-500 leading-none mt-1">Comprehensive</div>
                             </button>
                         </div>
+                    </div>
                     </div>
 
                     <div class="space-y-2">
@@ -185,7 +200,7 @@ const app = {
                         </div>
                     </div>
 
-                    <div class="space-y-4 pt-2">
+                    <div id="timing-options" class="space-y-4 pt-2">
                         <label class="text-sm font-semibold text-slate-700 block">Timing Strategy</label>
                         <input type="hidden" name="mode" id="input-mode" value="TIMED_QUESTION">
                         <div class="grid grid-cols-2 gap-4">
@@ -201,7 +216,7 @@ const app = {
                     </div>
 
                     <button type="submit" id="generate-btn" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 group mt-4">
-                        <span>Launch AI Assessment</span>
+                        <span id="submit-text">Launch AI Assessment</span>
                         <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
@@ -209,6 +224,29 @@ const app = {
                 </form>
             </div>
         `;
+    },
+
+    setGoal(goal) {
+        document.getElementById('input-goal').value = goal;
+        const btnQuiz = document.getElementById('btn-goal-QUIZ');
+        const btnPlan = document.getElementById('btn-goal-PLAN');
+        const quizOpts = document.getElementById('quiz-options');
+        const timeOpts = document.getElementById('timing-options');
+        const submitTxt = document.getElementById('submit-text');
+
+        if (goal === 'QUIZ') {
+            btnQuiz.className = "flex-1 py-2 rounded-lg text-sm font-bold transition-all bg-white text-indigo-600 shadow-sm";
+            btnPlan.className = "flex-1 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-700";
+            quizOpts.classList.remove('hidden');
+            timeOpts.classList.remove('hidden');
+            submitTxt.textContent = "Launch AI Assessment";
+        } else {
+            btnPlan.className = "flex-1 py-2 rounded-lg text-sm font-bold transition-all bg-white text-indigo-600 shadow-sm";
+            btnQuiz.className = "flex-1 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-700";
+            quizOpts.classList.add('hidden');
+            timeOpts.classList.add('hidden');
+            submitTxt.textContent = "Generate Study Plan";
+        }
     },
 
     selectType(type) {
@@ -353,6 +391,48 @@ const app = {
                             ${nextBtnText}
                             ${nextBtnIcon}
                         </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    renderStudyPlan(plan) {
+        const container = document.getElementById('app-container');
+        container.innerHTML = `
+            <div class="space-y-8 fade-in max-w-4xl mx-auto">
+                <div class="bg-white p-8 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                    <div class="flex items-start justify-between gap-4 mb-6">
+                        <div>
+                            <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest">Personalized Study Plan</span>
+                            <h2 class="text-3xl font-black text-slate-900 mt-2">${plan.title}</h2>
+                        </div>
+                        <button onclick="app.renderConfig()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                    <p class="text-slate-600 leading-relaxed text-lg border-l-4 border-indigo-200 pl-4 mb-8">${plan.introduction}</p>
+                    
+                    <div class="space-y-6">
+                        ${plan.modules.map((mod, idx) => `
+                            <div class="bg-slate-50 rounded-xl p-6 border border-slate-100 hover:border-indigo-200 transition-colors group">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-3">
+                                        <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm font-bold shadow-md shadow-indigo-200">${idx + 1}</span>
+                                        ${mod.topic}
+                                    </h3>
+                                    <span class="text-xs font-bold px-3 py-1 bg-white rounded-full text-slate-500 border border-slate-200 flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        ${mod.timeEstimate}
+                                    </span>
+                                </div>
+                                <p class="text-slate-600 mb-4 ml-11">${mod.description}</p>
+                                <div class="ml-11 bg-white p-4 rounded-lg border border-slate-200 text-sm text-slate-700 flex items-start gap-2">
+                                    <svg class="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                                    <span><strong>Activity:</strong> ${mod.activity}</span>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
             </div>
@@ -575,6 +655,7 @@ const app = {
 
         const req = {
             topic: formData.get('topic'),
+            goal: formData.get('goal'),
             mode: formData.get('mode'),
             type: formData.get('type'),
             image: imageBase64
@@ -587,6 +668,11 @@ const app = {
                 return;
             }
             
+            if (res.studyPlan) {
+                this.renderStudyPlan(res.studyPlan);
+                return;
+            }
+
             this.state.questions = res.questions;
             this.state.mode = req.mode;
             this.state.userResponses = new Array(res.questions.length).fill(null);
