@@ -168,6 +168,15 @@ func initDB() {
 		}
 	}
 	log.Println("Database initialized successfully.")
+
+	// Migrations for new columns (Ignore errors if they already exist)
+	migrationQueries := []string{
+		`ALTER TABLE users ADD COLUMN recommendations TEXT;`,
+		`ALTER TABLE users ADD COLUMN last_quiz_count INTEGER DEFAULT 0;`,
+	}
+	for _, q := range migrationQueries {
+		db.Exec(q)
+	}
 }
 
 // --- Gemini Service ---
@@ -550,7 +559,59 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
-	// Placeholder for profile updates
+	user, err := getUserFromSession(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		Name            string `json:"name"`
+		Grade           string `json:"grade"`
+		CurrentPassword string `json:"currentPassword"`
+		NewPassword     string `json:"newPassword"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Update Basic Info
+	if req.Name != "" {
+		user.Name = req.Name
+	}
+	if req.Grade != "" {
+		user.Grade = req.Grade
+	}
+
+	_, err = db.Exec("UPDATE users SET name = ?, grade = ? WHERE id = ?", user.Name, user.Grade, user.ID)
+	if err != nil {
+		http.Error(w, "Failed to update profile", http.StatusInternalServerError)
+		return
+	}
+
+	// Handle Password Change
+	if req.NewPassword != "" {
+		if strings.HasPrefix(user.Email, "guest_") {
+			http.Error(w, "Guest accounts cannot change passwords.", http.StatusForbidden)
+			return
+		}
+
+		var hash string
+		if err := db.QueryRow("SELECT password_hash FROM users WHERE id = ?", user.ID).Scan(&hash); err != nil {
+			http.Error(w, "User not found", http.StatusInternalServerError)
+			return
+		}
+
+		if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(req.CurrentPassword)); err != nil {
+			http.Error(w, "Invalid current password", http.StatusUnauthorized)
+			return
+		}
+
+		newHash, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+		db.Exec("UPDATE users SET password_hash = ? WHERE id = ?", string(newHash), user.ID)
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -670,36 +731,51 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Generate AI Recommendations based on aggregated weaknesses
-	var recommendations []string
-	if len(allWeaknesses) > 0 {
-		// Simple deduplication
-		weaknessMap := make(map[string]bool)
-		var uniqueWeaknesses []string
-		for _, w := range allWeaknesses {
-			if !weaknessMap[w] {
-				weaknessMap[w] = true
-				uniqueWeaknesses = append(uniqueWeaknesses, w)
-			}
-		}
-		if len(uniqueWeaknesses) > 5 {
-			uniqueWeaknesses = uniqueWeaknesses[:5]
-		}
+	// Check cache for recommendations
+	var storedRecs sql.NullString
+	var lastCount int
+	db.QueryRow("SELECT recommendations, last_quiz_count FROM users WHERE id = ?", user.ID).Scan(&storedRecs, &lastCount)
 
-		model := geminiClient.GenerativeModel("gemini-3-flash-preview")
-		prompt := fmt.Sprintf("Based on these academic weaknesses for a %s student: %v. Suggest 3 specific, short study topics or actions.", user.Grade, uniqueWeaknesses)
-		resp, err := model.GenerateContent(r.Context(), genai.Text(prompt))
-		if err == nil && len(resp.Candidates) > 0 {
-			if txt, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
-				lines := strings.Split(string(txt), "\n")
-				for _, l := range lines {
-					clean := strings.TrimSpace(strings.TrimLeft(l, "*-•1234567890. "))
-					if clean != "" {
-						recommendations = append(recommendations, clean)
+	var recommendations []string
+
+	// Only generate if new quizzes taken OR no recommendations exist
+	if totalQuizzes > lastCount || !storedRecs.Valid || storedRecs.String == "" {
+		if len(allWeaknesses) > 0 {
+			// Simple deduplication
+			weaknessMap := make(map[string]bool)
+			var uniqueWeaknesses []string
+			for _, w := range allWeaknesses {
+				if !weaknessMap[w] {
+					weaknessMap[w] = true
+					uniqueWeaknesses = append(uniqueWeaknesses, w)
+				}
+			}
+			if len(uniqueWeaknesses) > 5 {
+				uniqueWeaknesses = uniqueWeaknesses[:5]
+			}
+
+			model := geminiClient.GenerativeModel("gemini-3-flash-preview")
+			prompt := fmt.Sprintf("Based on these academic weaknesses for a %s student: %v. Suggest 3 specific, short study topics or actions.", user.Grade, uniqueWeaknesses)
+			resp, err := model.GenerateContent(r.Context(), genai.Text(prompt))
+			if err == nil && len(resp.Candidates) > 0 {
+				if txt, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
+					lines := strings.Split(string(txt), "\n")
+					for _, l := range lines {
+						clean := strings.TrimSpace(strings.TrimLeft(l, "*-•1234567890. "))
+						if clean != "" {
+							recommendations = append(recommendations, clean)
+						}
 					}
 				}
 			}
+			// Save to DB
+			if len(recommendations) > 0 {
+				recJSON, _ := json.Marshal(recommendations)
+				db.Exec("UPDATE users SET recommendations = ?, last_quiz_count = ? WHERE id = ?", string(recJSON), totalQuizzes, user.ID)
+			}
 		}
+	} else {
+		json.Unmarshal([]byte(storedRecs.String), &recommendations)
 	}
 
 	if len(recommendations) == 0 {
