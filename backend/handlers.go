@@ -177,7 +177,29 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	plan := coach.GenerateStudyPlan(sess)
+	// Try to generate a study plan via AI; fall back to heuristic generator
+	var plan *model.StudyPlan
+	aiPrompt := buildPlanPrompt(sess)
+	if aiResp, err := ai.QueryGemini(aiPrompt); err == nil {
+		// attempt to parse JSON response into StudyPlan
+		var aiPlan model.StudyPlan
+		if json.Unmarshal([]byte(aiResp), &aiPlan) == nil {
+			// ensure required fields
+			if aiPlan.StudentID == "" {
+				aiPlan.StudentID = sess.StudentID
+			}
+			if aiPlan.Subject == "" {
+				aiPlan.Subject = sess.Subject
+			}
+			if aiPlan.CreatedAt.IsZero() {
+				aiPlan.CreatedAt = time.Now()
+			}
+			plan = &aiPlan
+		}
+	}
+	if plan == nil {
+		plan = coach.GenerateStudyPlan(sess)
+	}
 
 	if err := storage.SaveStudyPlan(sess.StudentID, plan); err != nil {
 		http.Error(w, "failed to save plan", http.StatusInternalServerError)
@@ -195,11 +217,20 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 		profile = p
 	}
 
+	// capture existing achievements so we can return newly-earned ones
+	existing := make(map[string]bool)
+	for _, a := range profile.Achievements {
+		existing[a] = true
+	}
+	var newAchievements []model.AchievementRecord
+
 	// compute streak
 	if profile.LastActive.IsZero() {
 		// first activity
+		if rec := AddAchievement(profile, "First Steps"); rec != nil {
+			newAchievements = append(newAchievements, *rec)
+		}
 		profile.Streak = 1
-		AddAchievement(profile, "First Steps")
 	} else {
 		// compare date differences
 		days := int(now.Sub(profile.LastActive).Hours() / 24)
@@ -221,25 +252,33 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 		if t.Correct != nil && *t.Correct {
 			correctCount++
 		}
-		if t.ActualSeconds > 0 && t.ActualSeconds < t.EstimatedSecs {
+		if t.ActualSeconds > 0 && t.EstimatedSecs > 0 && t.ActualSeconds < t.EstimatedSecs {
 			fastCount++
 		}
 	}
 	if total > 0 {
 		if correctCount*100/total >= 80 {
-			AddAchievement(profile, "Accuracy Ace")
+			if rec := AddAchievement(profile, "Accuracy Ace"); rec != nil {
+				newAchievements = append(newAchievements, *rec)
+			}
 		}
 		if fastCount*2 > total { // more than half
-			AddAchievement(profile, "Quick Solver")
+			if rec := AddAchievement(profile, "Quick Solver"); rec != nil {
+				newAchievements = append(newAchievements, *rec)
+			}
 		}
 	}
 
 	// streak achievements
 	if profile.Streak >= 3 {
-		AddAchievement(profile, "3-Day Streak")
+		if rec := AddAchievement(profile, "3-Day Streak"); rec != nil {
+			newAchievements = append(newAchievements, *rec)
+		}
 	}
 	if profile.Streak >= 7 {
-		AddAchievement(profile, "7-Day Streak")
+		if rec := AddAchievement(profile, "7-Day Streak"); rec != nil {
+			newAchievements = append(newAchievements, *rec)
+		}
 	}
 
 	// Persist profile and snapshot of topics
@@ -267,7 +306,9 @@ func submitResultsHandler(w http.ResponseWriter, r *http.Request) {
 	// --- end gamification update ---
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(plan)
+	// return plan plus newly-earned achievements so UI can display them immediately
+	resp := map[string]interface{}{"plan": plan, "new_achievements": newAchievements}
+	json.NewEncoder(w).Encode(resp)
 }
 
 // getStudyPlanHandler retrieves the study plan for a student
@@ -328,10 +369,10 @@ func getProfileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // helper to append unique achievement and award badge/points
-func AddAchievement(p *model.ProfileResponse, name string) {
+func AddAchievement(p *model.ProfileResponse, name string) *model.AchievementRecord {
 	for _, a := range p.Achievements {
 		if a == name {
-			return
+			return nil
 		}
 	}
 	p.Achievements = append(p.Achievements, name)
@@ -340,6 +381,9 @@ func AddAchievement(p *model.ProfileResponse, name string) {
 		p.EarnedBadges = append(p.EarnedBadges, b)
 		p.Points += b.Points
 	}
+	rec := model.AchievementRecord{Name: name, EarnedAt: time.Now()}
+	p.RecentAchievements = append(p.RecentAchievements, rec)
+	return &rec
 }
 
 // buildSummaryPrompt composes a short prompt describing the session and study plan for the LLM
@@ -354,5 +398,19 @@ func buildSummaryPrompt(sess *model.Session, plan *model.StudyPlan) string {
 	for k, v := range plan.Focus {
 		b.WriteString(fmt.Sprintf("- %s: %s\n", k, v))
 	}
+	return b.String()
+}
+
+// new helper to ask AI to produce a JSON study plan
+func buildPlanPrompt(sess *model.Session) string {
+	var b strings.Builder
+	b.WriteString("You are an educational assistant. Based on the student's recent session data, produce a JSON object matching the StudyPlan schema:\n")
+	b.WriteString("{\n  \"student_id\": \"...\",\n  \"subject\": \"...\",\n  \"created_at\": \"2024-01-02T15:04:05Z\",\n  \"focus\": { \"topic\": \"recommendation\" },\n  \"next_timers\": [60,120]\n}\n\n")
+	b.WriteString("Use the session information below (task prompt, estimated secs, actual secs, correctness) to prioritize focus areas and suggested next_timers. Return only the JSON object, nothing else.\n\n")
+	b.WriteString("Session data:\n")
+	for i, t := range sess.Tasks {
+		b.WriteString(fmt.Sprintf("%d. prompt: %s | est: %d | actual: %d | correct: %v\n", i+1, t.Prompt, t.EstimatedSecs, t.ActualSeconds, t.Correct != nil && *t.Correct))
+	}
+	b.WriteString(fmt.Sprintf("\nSubject: %s\nStudentID: %s\n", sess.Subject, sess.StudentID))
 	return b.String()
 }
