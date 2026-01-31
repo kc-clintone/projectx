@@ -1,31 +1,43 @@
 # EduPulse AI (Go Version)
 
-EduPulse AI is an intelligent educational platform designed to facilitate academic and professional learning. Powered by Google's Gemini AI, it dynamically generates quizzes based on user-defined topics and analyzes performance to provide personalized feedback and study plans.
+EduPulse AI is an intelligent educational platform designed to facilitate academic and professional learning. Powered by Google's Gemini AI, it dynamically generates quizzes and study plans based on user-defined topics, analyzes performance to provide personalized feedback, and tracks progress over time.
 
 ## Features
 
-*   **AI-Powered Quiz Generation**: Create quizzes on any topic, tailored to specific grade levels (Elementary to Professional).
-*   **Flexible Question Formats**: Support for Multiple Choice (MCQ), Open-Ended, or Mixed question types.
-*   **Study Material Integration**: Upload images (notes, diagrams) to generate questions based on specific content.
-*   **Adaptive Assessment Modes**:
+*   **Authentication & User Management**:
+    *   Secure Sign Up and Login.
+    *   **Guest Mode** for quick access without an account.
+    *   Profile management (update details, change password).
+*   **Personalized Dashboard**:
+    *   Overview of total quizzes taken and average score.
+    *   Visual charts for recent activity.
+    *   **AI Recommendations** based on identified weaknesses (cached for efficiency).
+*   **AI-Powered Content Generation**:
+    *   **Quizzes**: Create assessments on any topic with adjustable difficulty (Elementary to Professional).
+    *   **Study Plans**: Generate structured learning modules with time estimates and activities.
+*   **Flexible Assessment Formats**:
+    *   Multiple Choice (MCQ), Open-Ended, or Mixed question types.
+    *   **Image Analysis**: Upload study notes or diagrams to generate relevant questions.
+*   **Adaptive Modes**:
     *   *Per Question*: Timed strictly per question.
     *   *Full Session*: Manage time across the entire quiz.
 *   **Comprehensive Analysis**:
     *   Instant grading and feedback.
     *   Identification of strengths and weaknesses.
-    *   Personalized study recommendations.
-*   **Session Management**: Tracks user history and progress (stored locally in `sessions.json`).
+    *   Performance tracking stored in a local SQLite database.
 
 ## Tech Stack
 
 *   **Backend**: Go (Golang)
+*   **Database**: SQLite (`edupulse.db`)
 *   **Frontend**: Vanilla JavaScript, HTML5, Tailwind CSS
 *   **AI Engine**: Google Gemini API (`gemini-3-flash-preview`)
-*   **Data Storage**: JSON-based flat file storage
+*   **Security**: Bcrypt password hashing
 
 ## Prerequisites
 
 *   Go (1.21 or later recommended)
+*   GCC (required for `go-sqlite3`)
 *   A Google Cloud Project with the Gemini API enabled
 *   An API Key for Gemini
 
@@ -53,24 +65,27 @@ EduPulse AI is an intelligent educational platform designed to facilitate academ
     ```bash
     go run main.go
     ```
+    *Note: The application will automatically initialize the SQLite database (`edupulse.db`) on the first run.*
 
 5.  **Access the App**:
     Open your browser and navigate to `http://localhost:8080`.
 
 ## Usage Guide
 
-1.  **Profile Setup**: Enter your name and academic grade level to calibrate the AI's difficulty.
-2.  **Create Quiz**:
-    *   Enter a topic (e.g., "Photosynthesis", "Linear Algebra").
-    *   Select question type (MCQ, Open, Mixed).
-    *   (Optional) Upload an image of study notes.
-    *   Choose a timing strategy.
-3.  **Take Assessment**: Answer questions within the time limit.
-4.  **Review Results**: Receive a detailed breakdown of your performance, including AI-generated feedback on open-ended answers and a targeted study plan.
+1.  **Authentication**: Sign up for an account, log in, or continue as a Guest.
+2.  **Dashboard**: View your stats and AI-curated recommendations.
+3.  **Create Content**:
+    *   Click "Start New Session".
+    *   Choose **Take a Quiz** or **Generate Study Plan**.
+    *   Enter a topic (e.g., "Photosynthesis") or upload an image.
+    *   Configure settings (Question type, Timing).
+4.  **Assessment/Learning**: Complete the quiz or review the study plan.
+5.  **Analysis**: Receive instant feedback and return to the dashboard to see updated stats.
 
 ## Project Structure
 
-*   `main.go`: The core Go server handling API routes, Gemini integration, and session management.
-*   `static/`: Contains frontend assets (HTML, JS, CSS).
-    *   `js/app.js`: Client-side logic for state management and UI rendering.
-*   `sessions.json`: Persisted storage for user sessions and quiz history.
+*   `main.go`: The core Go server handling API routes, Gemini integration, database logic, and session management.
+*   `static/`: Contains frontend assets.
+    *   `js/app.js`: Client-side logic for state management, UI rendering, and API calls.
+    *   `index.html`: Main entry point.
+*   `edupulse.db`: Local SQLite database (created at runtime).
