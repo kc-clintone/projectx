@@ -158,34 +158,55 @@ function CreateSession({onCreated}){
   const [image,setImage]=useState(null)
   const [ocrRunning,setOcrRunning]=useState(false)
   const [error,setError]=useState('')
+  const [studentLevel,setStudentLevel]=useState(localStorage.getItem('sc_student_level')||'grade10')
 
   function onFile(e){ const f=e.target.files[0]; if(!f) return; setError(''); if(f.type.startsWith('image/')) { setImage(f); runOcr(f) } else { const r=new FileReader(); r.onload=()=>setTasksText(r.result.split('\n').slice(0,20).join('\n')); r.readAsText(f)} }
 
   async function runOcr(file){ setOcrRunning(true); setError(''); try{ const { createWorker } = Tesseract; const worker = createWorker({logger:m=>console.log(m)}); await worker.load(); await worker.loadLanguage('eng'); await worker.initialize('eng'); const { data } = await worker.recognize(file); await worker.terminate(); setTasksText(data.text || ''); } catch(e){ setError('OCR failed'); } finally{ setOcrRunning(false) } }
 
-  async function submit(){ setError(''); if(!subject) { setError('Please enter a subject'); return } const tasks = tasksText.split('\n').filter(Boolean).map((t,i)=>({id:String(i+1),prompt:t})); if(tasks.length===0){ setError('Please provide at least one task'); return } try{ const sess = await api.createSession({student_id:localStorage.getItem('sc_username')||'demo',student_level:'grade10',subject,tasks}); onCreated(sess) } catch(e){ setError('Failed to create session') } }
+  async function submit(){ setError(''); if(!subject) { setError('Please enter a subject'); return } const tasks = tasksText.split('\n').filter(Boolean).map((t,i)=>({id:String(i+1),prompt:t})); if(tasks.length===0){ setError('Please provide at least one task'); return } try{ localStorage.setItem('sc_student_level', studentLevel); const sess = await api.createSession({student_id:localStorage.getItem('sc_username')||'demo',student_level:studentLevel,subject,tasks}); onCreated(sess) } catch(e){ setError('Failed to create session') } }
 
   return h('div',{class:'card'},
     h('h2',null,'Create Session'),
     error ? h('div',{style:{color:'crimson'}},error) : null,
-    h('div',null,'Subject: ', h('input',{value:subject,onInput:e=>setSubject(e.target.value)})),
+    h('div',null,'Subject: ', h('input',{value:subject,onInput:function(e){setSubject(e.target.value)}})),
+    h('div',null,'Student level: ', h('input',{value:studentLevel,onInput:function(e){setStudentLevel(e.target.value)}})),
     h('div',null,'Paste or upload tasks:'),
-    h('textarea',{style:{width:'100%',height:140},value:tasksText,onInput:(e)=>setTasksText(e.target.value)}),
+    h('textarea',{style:{width:'100%',height:140},value:tasksText,onInput:function(e){setTasksText(e.target.value)}}),
     h('div',null, h('input',{type:'file',onChange:onFile}), ocrRunning? h('div',null,'OCR running...'):null),
     h('div',{style:{marginTop:8}}, h(Button,{onClick:submit},'Create Session'))
   )
 }
 
-function SessionPlayer({session,onDone}){
+function SessionPlayer({session,onDone,onAchievements}){
   const [idx,setIdx]=useState(0)
   const [elapsed,setElapsed]=useState(0)
   const [running,setRunning]=useState(false)
   useEffect(()=>{ let t; if(running) t=setInterval(()=>setElapsed(e=>e+1),1000); return ()=>clearInterval(t) },[running])
   function start(){ setElapsed(0); setRunning(true) }
-  function next(){ if(!session) return; session.tasks[idx].actual_seconds = elapsed; setElapsed(0); if(idx+1>=session.tasks.length){ setRunning(false); onDone(session) } else { setIdx(idx+1) } }
+  // mark current task as correct/incorrect and advance
+  function markAndNext(correct){ if(!session) return; const cur = session.tasks[idx]; cur.actual_seconds = elapsed; cur.correct = !!correct; setElapsed(0); if(idx+1>=session.tasks.length){ setRunning(false); submitAllResults() } else { setIdx(idx+1) } }
+
+  async function submitAllResults(){
+    // build submission payload
+    const payload = { session_id: session.id, results: session.tasks.map(t=>({ actual_seconds: t.actual_seconds || t.estimated_secs || 0, correct: !!t.correct })) }
+    try{
+      const resp = await api.submitResults(payload)
+      // backend may return {plan, new_achievements} or a plan directly
+      const plan = resp.plan ? resp.plan : resp
+      if(resp.new_achievements && resp.new_achievements.length>0){
+        // notify parent to show confetti etc
+        if(typeof onAchievements === 'function') onAchievements(resp.new_achievements)
+      }
+      onDone(plan)
+    } catch(e){
+      onDone(null)
+    }
+  }
+
   const current = session.tasks[idx] || {estimated_secs:0,prompt:'(none)'}
   const remaining = Math.max(0, (current.estimated_secs || 0) - elapsed)
-  return h('div',{class:'card'}, h('h2',null,'Session Player'), h('div',null,'Task: ', current.prompt), h('div',{class:'taskLarge'}, 'Remaining: '+remaining+'s'), h('div',{style:{marginTop:8}}, h(Button,{onClick:start,disabled:running||remaining===0},'Start'), ' ', h(Button,{onClick:next},'Done/Next')) )
+  return h('div',{class:'card'}, h('h2',null,'Session Player'), h('div',null,'Task: ', current.prompt), h('div',{class:'taskLarge'}, 'Remaining: '+remaining+'s'), h('div',{style:{marginTop:8}}, h(Button,{onClick:start,disabled:running||remaining===0},'Start'), ' ' , h(Button,{onClick:()=>markAndNext(true)},'Done — mark Correct'), ' ', h(Button,{onClick:()=>markAndNext(false)},'Done — mark Incorrect')) )
 }
 
 function StudyPlan({plan, onClose}){
@@ -212,9 +233,7 @@ function App(){
     view==='login' ? h(Login,{onLogin:handleLogin}) : null,
     view==='dashboard' ? h(Dashboard,{onStart:()=>setView('create'), onNewAchievements:handleNewAchievements}) : null,
     view==='create' ? h(CreateSession,{onCreated:(s)=>{ setSession(s); setView('player') }}) : null,
-    view==='player' && session ? h(SessionPlayer,{session,onDone:(s)=>{
-        api.submitResults({session_id:s.id, results:s.tasks.map(t=>({actual_seconds:t.actual_seconds||t.estimated_secs, correct:true}))}).then((pl)=>{ setPlan(pl); setView('plan') }).catch(()=>setView('dashboard'))
-    }}) : null,
+    view==='player' && session ? h(SessionPlayer,{session,onDone:(pl)=>{ setPlan(pl); setView('plan') }, onAchievements:handleNewAchievements}) : null,
     view==='plan' && plan ? h(StudyPlan,{plan,onClose:()=>{ setPlan(null); setView('dashboard') }}) : null,
     showConfetti ? h(ConfettiCanvas) : null
   )

@@ -518,3 +518,38 @@ func parseFocusFromText(s string) map[string]string {
 	}
 	return out
 }
+
+// updateMeHandler allows the logged-in user to update mutable profile fields like student_level
+func updateMeHandler(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("sc_session")
+	if err != nil || c.Value == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	username := c.Value
+	var body struct {
+		StudentLevel string `json:"student_level"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	u, err := storage.LoadUser(username)
+	if err != nil {
+		http.Error(w, "user not found", http.StatusNotFound)
+		return
+	}
+	u.StudentLevel = body.StudentLevel
+	if err := storage.SaveUser(u); err != nil {
+		http.Error(w, "failed to save user", http.StatusInternalServerError)
+		return
+	}
+	// also update profile record to include student level if profile exists
+	p, _ := storage.LoadProfile(username)
+	if p != nil {
+		// no explicit field in ProfileResponse for level; we keep LastPlan and other fields
+		_ = storage.SaveProfile(username, p)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"student_level": u.StudentLevel})
+}
