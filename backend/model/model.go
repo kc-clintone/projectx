@@ -65,6 +65,16 @@ type Badge struct {
 	Points      int    `json:"points"`
 }
 
+// User represents an authenticated user account stored locally.
+// PasswordHash should contain a bcrypt hash of the user's password.
+type User struct {
+	Username     string    `json:"username"`
+	PasswordHash string    `json:"password_hash"`
+	Email        string    `json:"email,omitempty"`
+	StudentLevel string    `json:"student_level,omitempty"` // e.g., grade10
+	CreatedAt    time.Time `json:"created_at"`
+}
+
 // ProfileResponse returned by the student profile endpoint
 type ProfileResponse struct {
 	StudentID    string             `json:"student_id"`

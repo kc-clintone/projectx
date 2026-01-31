@@ -9,6 +9,12 @@ import (
 func setupRouter() http.Handler {
 	router := mux.NewRouter()
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK); w.Write([]byte("ok")) }).Methods("GET")
+	// auth
+	router.HandleFunc("/api/v1/register", registerHandler).Methods("POST")
+	router.HandleFunc("/api/v1/login", loginHandler).Methods("POST")
+	router.HandleFunc("/api/v1/logout", logoutHandler).Methods("POST")
+	router.HandleFunc("/api/v1/me", getMeHandler).Methods("GET")
+
 	router.HandleFunc("/api/v1/session", createSessionHandler).Methods("POST")
 	router.HandleFunc("/api/v1/submit_results", submitResultsHandler).Methods("POST")
 	router.HandleFunc("/api/v1/study_plan/{student_id}", getStudyPlanHandler).Methods("GET")

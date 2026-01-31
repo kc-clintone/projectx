@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/kc-clintone/study-coach/model"
@@ -163,4 +164,53 @@ func LoadSnapshot(studentID string) (*model.TopicSnapshot, error) {
 		return nil, err
 	}
 	return &snapshot, nil
+}
+
+// SaveUser persists a User account as JSON under storage dir
+func SaveUser(u *model.User) error {
+	if err := ensureDir(); err != nil {
+		return err
+	}
+	b, _ := json.MarshalIndent(u, "", "  ")
+	path := filepath.Join(storageDir, "user_"+u.Username+".json")
+	return os.WriteFile(path, b, 0o600)
+}
+
+// LoadUser loads a User account by username
+func LoadUser(username string) (*model.User, error) {
+	path := filepath.Join(storageDir, "user_"+username+".json")
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var u model.User
+	if err := json.Unmarshal(b, &u); err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+// DeleteUser removes a user file
+func DeleteUser(username string) error {
+	path := filepath.Join(storageDir, "user_"+username+".json")
+	return os.Remove(path)
+}
+
+// ListUsers returns all usernames
+func ListUsers() ([]string, error) {
+	if err := ensureDir(); err != nil {
+		return nil, err
+	}
+	entries, err := os.ReadDir(storageDir)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, "user_") && strings.HasSuffix(name, ".json") {
+			out = append(out, strings.TrimSuffix(strings.TrimPrefix(name, "user_"), ".json"))
+		}
+	}
+	return out, nil
 }
