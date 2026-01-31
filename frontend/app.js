@@ -74,12 +74,52 @@ function Login({onLogin}){
   )
 }
 
-function Dashboard({onStart}){
+function Dashboard({onStart, onNewAchievements}){
   const [me,setMe]=useState(null)
   const [error,setError]=useState('')
-  useEffect(()=>{ api.me().then(u=>{ if(u) setMe(u); else setError('Not authenticated') }).catch(()=>setError('Failed to load profile')) },[])
-    return h('div',{},
-    h('div',{class:'card'}, h('h2',null,'Dashboard'), me ? h('div',null, h('div',null,'User: '+me.username), h('div',null,'Level: '+(me.student_level||'not set')), h('div',null, h(Button,{onClick:onStart},'Start New Session')) ) : h('div',null, error || 'Loading...')),
+  useEffect(()=>{
+    api.me().then(u=>{
+      if(u) {
+        setMe(u)
+        // determine achievements list from response (profile may be nested)
+        const achievements = (u.profile && u.profile.achievements) || u.achievements || []
+        const key = 'sc_achievements_'+(u.username||'guest')
+        const storedRaw = localStorage.getItem(key)
+        if(storedRaw === null) {
+          // first time seeing achievements for this user; initialize but don't fire confetti
+          try{ localStorage.setItem(key, JSON.stringify(achievements || [])) } catch(e){}
+        } else {
+          try{
+            const stored = JSON.parse(storedRaw || '[]')
+            const newOnes = (achievements || []).filter(a=>stored.indexOf(a) === -1)
+            if(newOnes.length>0) {
+              // notify parent that there are new achievements
+              if(typeof onNewAchievements === 'function') onNewAchievements(newOnes)
+              // update stored list
+              localStorage.setItem(key, JSON.stringify(Array.from(new Set([].concat(stored, achievements || [])))))
+            }
+          } catch(e) { /* ignore parse errors */ }
+        }
+      } else {
+        setError('Not authenticated')
+      }
+    }).catch(()=>setError('Failed to load profile'))
+  },[])
+
+  return h('div',{},
+    h('div',{class:'card'}, h('h2',null,'Dashboard'), me ? h('div',null,
+      h('div',null,'User: '+me.username),
+      h('div',null,'Level: '+(me.student_level||'not set')),
+      h('div',null, h(Button,{onClick:onStart},'Start New Session')),
+      h('div',{style:{marginTop:12}},
+        h('h3',null,'Achievements'),
+        (me.profile && me.profile.achievements && me.profile.achievements.length) ? h('ul',null, me.profile.achievements.map(a=> h('li',null,a))) : h('div',null,'No achievements yet')
+      ),
+      h('div',{style:{marginTop:12}},
+        h('h3',null,'Badges'),
+        (me.profile && me.profile.earned_badges && me.profile.earned_badges.length) ? h('div',null, me.profile.earned_badges.map(b=> h('span',{class:'badge',style:{background:b.color,display:'inline-block',padding:'6px',marginRight:6,borderRadius:6}}, b.icon+' '+b.name))) : h('div',null,'No badges yet')
+      )
+    ) : h('div',null, error || 'Loading...')),
     h('div',{style:{height:12}})
   )
 }
@@ -97,7 +137,7 @@ function CreateSession({onCreated}){
 
   async function submit(){ setError(''); if(!subject) { setError('Please enter a subject'); return } const tasks = tasksText.split('\n').filter(Boolean).map((t,i)=>({id:String(i+1),prompt:t})); if(tasks.length===0){ setError('Please provide at least one task'); return } try{ const sess = await api.createSession({student_id:localStorage.getItem('sc_username')||'demo',student_level:'grade10',subject,tasks}); onCreated(sess) } catch(e){ setError('Failed to create session') } }
 
-  return h('div',{class:'card'}, h('h2',null,'Create Session'), error ? h('div',{style:{color:'crimson'}},error) : null, h('div',null,'Subject: ', h('input',{value:subject,onInput:e=>setSubject(e.target.value)})), h('div',null,'Paste or upload tasks:'), h('textarea',{style:{width:'100%',height:140},value:tasksText,onInput:e=>setTasksText(e.target.value)}), h('div',null, h('input',{type:'file',onChange:onFile}), ocrRunning? h('div',null,'OCR running...'):null), h('div',{style:{marginTop:8}}, h(Button,{onClick:submit},'Create Session')) )
+  return h('div',{class:'card'}, h('h2',null,'Create Session'), error ? h('div',{style:{color:'crimson'}},error) : null, h('div',null,'Subject: ', h('input',{value:subject,onInput:e=>setSubject(e.target.value)})), h('div',null,'Paste or upload tasks:'), h('textarea',{style:{width:'100%',height:140},value:tasksText,onInput=e=>setTasksText(e.target.value)}), h('div',null, h('input',{type:'file',onChange:onFile}), ocrRunning? h('div',null,'OCR running...'):null), h('div',{style:{marginTop:8}}, h(Button,{onClick:submit},'Create Session')) )
 }
 
 function SessionPlayer({session,onDone}){
@@ -128,18 +168,19 @@ function App(){
   const [view,setView]=useState('login')
   const [session,setSession]=useState(null)
   const [plan,setPlan]=useState(null)
+  const [showConfetti,setShowConfetti]=useState(false)
   useEffect(()=>{ const username = localStorage.getItem('sc_username'); if(username) api.me().then(u=>{ if(u) setView('dashboard') }) },[])
   function handleLogin(username){ localStorage.setItem('sc_username', username); setView('dashboard') }
+  function handleNewAchievements(list){ if(list && list.length>0){ setShowConfetti(true); setTimeout(()=>setShowConfetti(false),4500) } }
   return h('div',{},
     view==='login' ? h(Login,{onLogin:handleLogin}) : null,
-    view==='dashboard' ? h(Dashboard,{onStart:()=>setView('create')}) : null,
+    view==='dashboard' ? h(Dashboard,{onStart:()=>setView('create'), onNewAchievements:handleNewAchievements}) : null,
     view==='create' ? h(CreateSession,{onCreated:(s)=>{ setSession(s); setView('player') }}) : null,
     view==='player' && session ? h(SessionPlayer,{session,onDone:(s)=>{
-        // submit results and show generated study plan returned by server
         api.submitResults({session_id:s.id, results:s.tasks.map(t=>({actual_seconds:t.actual_seconds||t.estimated_secs, correct:true}))}).then((pl)=>{ setPlan(pl); setView('plan') }).catch(()=>setView('dashboard'))
     }}) : null,
     view==='plan' && plan ? h(StudyPlan,{plan,onClose:()=>{ setPlan(null); setView('dashboard') }}) : null,
-    h(ConfettiCanvas)
+    showConfetti ? h(ConfettiCanvas) : null
   )
 }
 
