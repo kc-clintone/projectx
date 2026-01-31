@@ -94,8 +94,8 @@ type ProfileResponse struct {
 	Streak     int       `json:"streak"`
 	LastActive time.Time `json:"last_active,omitempty"`
 	// Summary is an optional concise AI-generated summary of strengths/weaknesses
-	Summary   string     `json:"summary,omitempty"`
-	LastPlan  *StudyPlan `json:"last_plan,omitempty"`
+	Summary  string     `json:"summary,omitempty"`
+	LastPlan *StudyPlan `json:"last_plan,omitempty"`
 }
 
 type TopicImprovement struct {

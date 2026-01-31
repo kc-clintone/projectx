@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+# Pre-commit hook: run backend tests and abort commit on failure
+echo "Running backend tests..."
+if [ -d "backend" ]; then
+  pushd backend > /dev/null
+  if ! command -v go >/dev/null 2>&1; then
+    echo "go not found in PATH; skipping tests"
+    popd > /dev/null
+    exit 0
+  fi
+  if ! go test ./...; then
+    echo "Backend tests failed, aborting commit."
+    popd > /dev/null
+    exit 1
+  fi
+  popd > /dev/null
+fi
+
+exit 0

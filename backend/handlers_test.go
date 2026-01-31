@@ -81,7 +81,7 @@ func TestMeEndpointReturnsProfileWithLastPlan(t *testing.T) {
 	r.ServeHTTP(rec2, req2)
 
 	// login to get cookie
-	loginBody := map[string]string{"username":"meuser","password":""}
+	loginBody := map[string]string{"username": "meuser", "password": ""}
 	lb, _ := json.Marshal(loginBody)
 	lreq := httptest.NewRequest("POST", "/api/v1/login", bytes.NewReader(lb))
 	lrec := httptest.NewRecorder()
@@ -101,7 +101,9 @@ func TestMeEndpointReturnsProfileWithLastPlan(t *testing.T) {
 	// if login succeeded, extract cookie and call /api/v1/me
 	cookies := lrec.Result().Cookies()
 	reqMe := httptest.NewRequest("GET", "/api/v1/me", nil)
-	for _, c := range cookies { reqMe.AddCookie(c) }
+	for _, c := range cookies {
+		reqMe.AddCookie(c)
+	}
 	recMe := httptest.NewRecorder()
 	r.ServeHTTP(recMe, reqMe)
 	if recMe.Code != 200 {

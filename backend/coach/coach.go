@@ -25,7 +25,8 @@ func NewSession(studentID, studentLevel, subject string, tasks []model.Task) *mo
 		if tasks[i].Complexity == 0 {
 			tasks[i].Complexity = InferComplexity(tasks[i].Prompt, studentLevel)
 		}
-		tasks[i].EstimatedSecs = EstimateTimeForComplexity(tasks[i].Complexity)
+		// estimate time using student level and complexity
+		tasks[i].EstimatedSecs = EstimateTimeForComplexity(tasks[i].Complexity, studentLevel)
 		// extract topics
 		tasks[i].Topics = ExtractTopics(tasks[i].Prompt)
 	}
@@ -39,10 +40,26 @@ func NewSession(studentID, studentLevel, subject string, tasks []model.Task) *mo
 	}
 }
 
-// EstimateTimeForComplexity converts a complexity score to seconds.
-func EstimateTimeForComplexity(c int) int {
-	base := 60
-	return int(math.Max(30, float64(base*c)))
+// EstimateTimeForComplexity returns a per-task estimated seconds based on complexity and student level.
+func EstimateTimeForComplexity(c int, studentLevel string) int {
+	// parse grade out of studentLevel if present (e.g., "grade10" -> 10)
+	base := 60.0
+	if strings.HasPrefix(strings.ToLower(studentLevel), "grade") {
+		var g int
+		fmt.Sscanf(studentLevel, "grade%d", &g)
+		// adjust base minutes by grade: younger grades get slightly more time per complexity
+		if g <= 5 {
+			base = 90.0
+		} else if g <= 8 {
+			base = 75.0
+		} else if g <= 12 {
+			base = 60.0
+		} else {
+			base = 50.0
+		}
+	}
+	secs := int(math.Max(20, base*float64(c)))
+	return secs
 }
 
 // InferComplexity uses simple heuristics (prompt length) to infer complexity.
@@ -220,29 +237,4 @@ var BadgeCatalog = map[string]model.Badge{
 func GetBadgeByName(name string) (model.Badge, bool) {
 	b, ok := BadgeCatalog[name]
 	return b, ok
-}
-
-// IsLikelyAcademicTask applies simple heuristics to determine whether a free-text
-// student task looks like an academic problem (used as a fallback when AI is disabled).
-func IsLikelyAcademicTask(text string) bool {
-	s := strings.ToLower(strings.TrimSpace(text))
-	if len(s) < 5 {
-		return false
-	}
-	// common academic action verbs and phrases
-	keywords := []string{"solve", "calculate", "prove", "derive", "explain", "define", "compare", "evaluate", "what is", "find", "show that", "compute", "simplify", "integrate", "differentiate", "diagram", "describe", "why", "how"}
-	for _, k := range keywords {
-		if strings.Contains(s, k) {
-			return true
-		}
-	}
-	// presence of numbers, math symbols or question mark often indicates an academic prompt
-	if strings.ContainsAny(s, "0123456789=+-*/^()") || strings.Contains(s, "?") {
-		return true
-	}
-	// longer descriptive prompts are more likely academic
-	if len(s) > 60 {
-		return true
-	}
-	return false
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/kc-clintone/study-coach/coach"
 	"github.com/kc-clintone/study-coach/model"
 	"github.com/kc-clintone/study-coach/storage"
+	"github.com/kc-clintone/study-coach/validate"
 )
 
 // registerHandler creates a new local user with bcrypt hashed password
@@ -106,6 +107,12 @@ func createSessionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// require student level (grade) to personalize timers
+	if strings.TrimSpace(req.StudentLevel) == "" {
+		http.Error(w, "student_level required", http.StatusBadRequest)
+		return
+	}
+
 	// basic validation: only accept educational subjects
 	if !coach.IsEducationalSubject(req.Subject) {
 		http.Error(w, "subject not educational", http.StatusBadRequest)
@@ -124,7 +131,7 @@ func createSessionHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// fallback to heuristic
 		if !isAcademic {
-			if coach.IsLikelyAcademicTask(t.Prompt) {
+			if validate.IsLikelyAcademicTask(t.Prompt) {
 				isAcademic = true
 			}
 		}
