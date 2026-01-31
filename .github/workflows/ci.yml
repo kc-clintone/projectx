@@ -28,3 +28,26 @@ jobs:
         run: |
           export GEMINI_ENABLED=0
           go test ./... -v
+
+  test-frontend:
+    name: Run frontend uvu tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Cache node modules for frontend tests
+        uses: actions/cache@v4
+        with:
+          path: |
+            frontend/tests/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/tests/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install frontend test deps
+        run: npm --prefix frontend/tests ci
+      - name: Run frontend tests
+        run: ./scripts/run-frontend-tests.sh
