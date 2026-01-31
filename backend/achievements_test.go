@@ -3,11 +3,13 @@ package main
 import (
 	"os"
 	"testing"
+
+	"github.com/kc-clintone/study-coach/storage"
 )
 
 func TestAddAchievementAwardsBadgeAndPoints(t *testing.T) {
-	_ = os.RemoveAll(storageDir)
-	_ = ensureDir()
+	_ = os.RemoveAll(storage.GetStorageDir())
+	_ = storage.EnsureDir()
 	p := &ProfileResponse{StudentID: "u1", Achievements: []string{}, EarnedBadges: []Badge{}, Points: 0}
 	AddAchievement(p, "First Steps")
 	if len(p.Achievements) != 1 {
@@ -23,14 +25,14 @@ func TestAddAchievementAwardsBadgeAndPoints(t *testing.T) {
 }
 
 func TestPointsPersistedWithProfile(t *testing.T) {
-	_ = os.RemoveAll(storageDir)
-	_ = ensureDir()
+	_ = os.RemoveAll(storage.GetStorageDir())
+	_ = storage.EnsureDir()
 	p := &ProfileResponse{StudentID: "u2", Achievements: []string{}, EarnedBadges: []Badge{}, Points: 0}
 	AddAchievement(p, "Accuracy Ace")
-	if err := SaveProfile(p.StudentID, p); err != nil {
+	if err := storage.SaveProfile(p.StudentID, p); err != nil {
 		t.Fatal(err)
 	}
-	loaded, err := LoadProfile(p.StudentID)
+	loaded, err := storage.LoadProfile(p.StudentID)
 	if err != nil {
 		t.Fatal(err)
 	}

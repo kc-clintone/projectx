@@ -7,11 +7,14 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/kc-clintone/study-coach/storage"
 )
 
 func TestCreateSessionAndSubmitFlow(t *testing.T) {
 	// cleanup data dir
-	_ = os.RemoveAll(storageDir)
+	_ = os.RemoveAll(storage.GetStorageDir())
+	_ = storage.EnsureDir()
 
 	router := setupRouter()
 
